@@ -305,6 +305,19 @@
 .ec-emi-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line,#e6eaf0)}
 .ec-emi-r small{display:block;color:var(--muted);font-size:.8em;margin-top:2px}.ec-emi-b{display:flex;gap:6px;flex-shrink:0}
 @media (max-width:520px){.ec-emi-r{flex-wrap:wrap}.ec-emi-b{width:100%;justify-content:flex-end}}
+.b-borr{display:inline-flex;align-items:center;gap:4px}
+.borr-bar{background:#FFF8E6;border:1px solid #F3D48A;border-radius:14px;padding:10px 14px}
+.borr-bar summary{cursor:pointer;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px;flex-wrap:wrap;list-style:none}
+.borr-bar summary::-webkit-details-marker{display:none}
+.borr-bar summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}.borr-bar details[open] summary::after{transform:rotate(180deg)}
+.borr-bar summary small{color:var(--muted);font-weight:400;font-size:.82em}
+.borr-n{background:var(--orange);color:#fff;border-radius:999px;font-size:.78em;padding:1px 8px;min-width:20px;text-align:center}
+.borr-l{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+.borr-r{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 10px}
+.borr-r.on{border-color:var(--orange);box-shadow:0 0 0 2px rgba(237,162,0,.18)}
+.borr-ab{flex:1;text-align:left;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--text);font:inherit;min-width:0}
+.borr-ab small{display:block;color:var(--muted);font-size:.8em;margin-top:2px}
+@media (max-width:640px){ .actions > .b-borr{flex:0 0 auto} .b-borr span{display:none} }
 </style>
 </head>
 <body>
@@ -430,6 +443,7 @@
     <div class="card">
       <div class="actions">
         <button class="b-ghost" id="btn-limpiar">Limpiar</button>
+        <button class="b-ghost b-borr" id="btn-borr" title="Guardar como borrador para terminarla después">💾<span> Borrador</span></button>
         <button class="b-blue" id="btn-prev">Vista previa PDF</button>
         <button class="b-green" id="btn-emit">Emitir y publicar</button>
       </div>
@@ -549,6 +563,7 @@
     <div class="card">
       <div class="actions">
         <button class="b-ghost" id="fx-limpiar">Limpiar</button>
+        <button class="b-ghost b-borr" id="fx-borr" title="Guardar como borrador para terminarlo después">💾<span> Borrador</span></button>
         <button class="b-blue" id="fx-prev">Vista previa PDF</button>
         <button class="b-green" id="fx-emit">Emitir y publicar</button>
       </div>
@@ -1319,7 +1334,7 @@ async function recargarHist(){   // trae la versión más reciente antes de modi
 async function entrar(){
   try{ await cargarFac(); }catch(e){ console.error(e); FHIST = {v:1, docs:[]}; }
   $("sec-acceso").classList.add("hidden"); $("nav").classList.remove("hidden");
-  nueva(); fNueva(); show("nueva"); pintarAvisos();
+  nueva(); fNueva(); show("nueva"); pintarAvisos(); iniciarBorr();
 }
 
 /* ==================== navegación ==================== */
@@ -1525,7 +1540,7 @@ $("btn-emit").onclick = async () => {
         await guardarHist(`${EDIT?"Corregir":"Emitir"} cotización ${c.numero}`); break;
       }catch(e){ if(e.status!==409 || intento===2) throw e; }
     }
-    st.className="status ok"; st.textContent = `✓ Cotización ${c.numero} ${EDIT?"corregida":"emitida"} y publicada`;
+    st.className="status ok"; st.textContent = `✓ Cotización ${c.numero} ${EDIT?"corregida":"emitida"} y publicada`; borrEmitido("cot");
     const url = urlDe(c);
     msg.innerHTML = `<div class="box okb"><b>${esc(c.numero)} · ${esc(c.cliente)} · ${money(c.total)}</b><br>
       En 1–2 minutos el QR mostrará «Documento Verificado» en:<br><a href="${url}" target="_blank" rel="noopener">${url}</a>
@@ -2752,7 +2767,7 @@ $("fx-emit").onclick = async () => {
     }
     if(!$("fx-em-igual").checked && $("fx-em-fijar").checked && !mismoEmisor(d.emisor, emisorDef())){
       try{ await guardarAjustes(a => { a.emisor = sinCIP({...d.emisor}); }, "Ajustes: datos del emisor"); pintarEmisor(null); }catch(e){ console.warn(e); } }
-    const fem = d.tipo==="Factura"; st.className="status ok"; st.textContent = `✓ ${d.tipo} ${d.numero} ${FEDIT?(fem?"corregida":"corregido"):(fem?"emitida":"emitido")} y ${fem?"publicada":"publicado"}`;
+    borrEmitido("fac"); const fem = d.tipo==="Factura"; st.className="status ok"; st.textContent = `✓ ${d.tipo} ${d.numero} ${FEDIT?(fem?"corregida":"corregido"):(fem?"emitida":"emitido")} y ${fem?"publicada":"publicado"}`;
     const url = fUrl(d);
     msg.innerHTML = `<div class="box okb"><b>${esc(d.tipo)} ${esc(d.numero)} · ${esc(d.cliente)} · ${money(d.total)}</b><br>
       En 1–2 minutos el QR mostrará «Documento Verificado» en:<br><a href="${url}" target="_blank" rel="noopener">${url}</a>
@@ -4245,6 +4260,168 @@ async function incorporarPDF(file){
     }catch(e){ console.error(e); s.className = "status bad"; s.textContent = "No se pudo incorporar: " + e.message; btn.disabled = false; }
   };
 }
+
+
+/* ==================== BORRADORES (cotización y recibo/factura) ====================
+   Se guardan cifrados en historial/borradores.json (con la misma clave del historial) y sus fotos/anexos nuevos
+   en historial/borradores/<id>/<archivo>.bin. Un borrador no usa número: el número se asigna al emitir.
+   Además, el formulario abierto se respalda solo en este equipo (cifrado) por si se cierra la pestaña. */
+CFG.histBorr = "historial/borradores.json";
+let BORR = null, BSHA = null; const BORR_ACT = {cot:null, fac:null};
+const BMOD = {cot:{sec:"sec-form", filas:["rows-mat","rows-mo"], st:"emit-status", nom:"cotización"}, fac:{sec:"sec-fac", filas:["fx-rows"], st:"fx-status", nom:"recibo / factura"}};
+async function ghDel(repo, path, msg){ const sha = await ghShaOf(repo, path); if(!sha) return;
+  const r = await gh(repo, `/contents/${path}`, {method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({message:msg, sha, branch:CFG.branch})}); if(!r.ok && r.status!==404) throw new Error("GitHub " + r.status); }
+async function cargarBorr(){
+  const f = await ghGet(CFG.repoCot, CFG.histBorr);
+  if(f){ const env = JSON.parse(td.decode(f.bytes)); BORR = JSON.parse(td.decode(await descifrar(HKEY, unb64(env.iv), unb64(env.ct)))); BSHA = f.sha; } else { BORR = {v:1, items:[]}; BSHA = null; }
+}
+async function guardarBorr(cambio, msg){
+  for(let i=0;i<3;i++){ try{ await cargarBorr(); cambio(BORR); const enc = await cifrar(HKEY, te.encode(JSON.stringify(BORR)));
+      BSHA = await ghPut(CFG.repoCot, CFG.histBorr, te.encode(JSON.stringify({v:1, iv:b64(enc.iv), ct:b64(enc.ct)})), BSHA, msg); return; }
+    catch(e){ if(e.status!==409 || i===2) throw e; } }
+}
+const filasDe = mod => BMOD[mod].filas.flatMap(id => [...$(id).children]);
+const metaAnex = r => ({fotos:(r._fotos||[]).map(({id, subido, src}) => ({id, ...(subido?{subido}:{}), ...(src?{src}:{})})),
+                        docs:(r._docs||[]).map(({id, nombre, tipo, tam, subido, src}) => ({id, nombre, tipo, tam, ...(subido?{subido}:{}), ...(src?{src}:{})}))});
+function capturar(mod){   // foto exacta del formulario: campos, filas (en orden), anexos y estado interno
+  const sec = $(BMOD[mod].sec), enFila = el => el.closest(".row,.frow") || (REPDIV && REPDIV.contains(el));
+  const campos = {}, radios = {};
+  sec.querySelectorAll("input[id],select[id],textarea[id]").forEach(el => { if(el.type==="file" || el.disabled && el.id.endsWith("numero") || enFila(el)) return; campos[el.id] = el.type==="checkbox" || el.type==="radio" ? el.checked : el.value; });
+  sec.querySelectorAll("input[type=radio][name]:checked").forEach(el => { if(!enFila(el)) radios[el.name] = el.value; });
+  const filas = {}; BMOD[mod].filas.forEach(id => filas[id] = [...$(id).children].map(r => ({v:[...r.querySelectorAll("input:not([type=file]),textarea,select")].map(el => el.type==="checkbox" ? el.checked : el.value), ...(r.dataset.auto ? {auto:r.dataset.auto} : {}), ...metaAnex(r)})));
+  const e = {campos, radios, filas};
+  if(mod==="cot"){ e.edit = EDIT?.codigo || null; e.rep = REPDIV ? metaAnex(REPDIV) : null; }
+  else { e.edit = FEDIT?.codigo || null; e.cols = FCOLS; e.cons = FCONS; }
+  return e;
+}
+function resumenB(mod){
+  if(mod==="cot"){ calc(); return {cliente:$("f-cliente").value.trim(), total:$("g-total")?.textContent || ""}; }
+  return {cliente:$("fx-cliente").value.trim(), total:$("fx-total").textContent, tipo:fTipo()};
+}
+const formVacio = mod => { const e = capturar(mod), txt = Object.entries(e.campos).some(([k,v]) => typeof v==="string" && v.trim() && !/numero|fecha|vence|dur|dias|ultimo/.test(k) && !/^(f|fx)-em-/.test(k) && !/-g-/.test(k));
+  const fil = Object.values(e.filas).some(L => L.some(r => r.v.some(v => typeof v==="string" && v.trim()) || r.fotos.length || r.docs.length));
+  return !txt && !fil && !(e.rep && (e.rep.docs.length)); };
+const blobsNuevos = mod => [...filasDe(mod), ...(mod==="cot" && REPDIV ? [REPDIV] : [])].flatMap(r => [...(r._fotos||[]), ...(r._docs||[])]).filter(f => f.blob && !f.subido && !f.src);
+async function guardarBorrador(mod){
+  const st = $(BMOD[mod].st);
+  if(formVacio(mod)){ st.className = "status warn"; st.textContent = "El formulario está vacío: no hay nada que guardar."; return; }
+  const id = BORR_ACT[mod] || ("B" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+  st.className = "status"; st.textContent = "Guardando borrador…";
+  try{
+    const nuevos = blobsNuevos(mod);
+    for(let i=0;i<nuevos.length;i++){ const f = nuevos[i]; if(f.enBorr===id) continue; st.textContent = `Guardando borrador · archivo ${i+1} de ${nuevos.length}…`;
+      const e = await cifrar(HKEY, new Uint8Array(await f.blob.arrayBuffer())); const bin = new Uint8Array(12+e.ct.length); bin.set(e.iv,0); bin.set(e.ct,12);
+      await ghPut(CFG.repoCot, `historial/borradores/${id}/${f.id}.bin`, bin, await ghShaOf(CFG.repoCot, `historial/borradores/${id}/${f.id}.bin`), `Borrador · archivo`); f.enBorr = id; }
+    const reg = {id, mod, ...resumenB(mod), actualizado:new Date().toISOString(), estado:capturar(mod), archivos:nuevos.map(f => ({id:f.id, tipo:f.blob.type || f.tipo || ""}))};
+    await guardarBorr(B => { const j = B.items.findIndex(x => x.id===id); if(j>=0){ reg.creado = B.items[j].creado; B.items[j] = reg; } else { reg.creado = reg.actualizado; B.items.push(reg); } }, `Borrador de ${BMOD[mod].nom}${reg.cliente ? " · " + reg.cliente : ""}`);
+    respaldoBorrar(mod); BORR_ACT[mod] = null;
+    mod==="cot" ? nueva() : fNueva(); pintarBorr();
+    st.className = "status ok"; st.innerHTML = `💾 Borrador guardado${reg.cliente ? ` (<b>${esc(reg.cliente)}</b>)` : ""}. Lo encuentras arriba, en <b>Borradores</b>.`;
+  }catch(e){ console.error(e); st.className = "status bad"; st.textContent = "No se pudo guardar el borrador: " + e.message; }
+}
+async function aplicarEstado(mod, e, archivos){   // vuelve a armar el formulario tal como quedó
+  const setCampos = (soloSinEvento) => {
+    Object.entries(e.campos||{}).forEach(([id, v]) => { const el = $(id); if(!el) return;
+      if(el.type==="checkbox" || el.type==="radio"){ if(el.checked!==v){ el.checked = v; if(!soloSinEvento) el.dispatchEvent(new Event("change", {bubbles:true})); } }
+      else if(el.value!==v){ el.value = v; if(!soloSinEvento && id!=="fx-pedido") el.dispatchEvent(new Event("input", {bubbles:true})); } });
+    Object.entries(e.radios||{}).forEach(([n, v]) => { const el = document.querySelector(`input[type=radio][name="${CSS.escape(n)}"][value="${CSS.escape(v)}"]`); if(el && !el.checked){ el.checked = true; if(!soloSinEvento) el.dispatchEvent(new Event("change", {bubbles:true})); } });
+  };
+  const ponerArch = (r, m, codigo) => { r._fotos = (m.fotos||[]).map(f => ({...f, ...(archivos[f.id] ? {blob:archivos[f.id], url:URL.createObjectURL(archivos[f.id])} : {})}));
+    r._docs = (m.docs||[]).map(x => ({...x, ...(archivos[x.id] ? {blob:archivos[x.id]} : {})})); pintarFotos(r, codigo); };
+  if(mod==="cot"){
+    const c = e.edit ? (HIST.cotizaciones||[]).find(x => x.codigo===e.edit) : null; if(c) cargar(c, "editar"); else nueva();
+    setCampos(false);
+    BMOD.cot.filas.forEach(id => { const kind = id.replace("rows-",""); $(id).innerHTML = ""; (e.filas[id]||[]).forEach(f => { addRow(kind); const r = $(id).lastChild; const els = [...r.querySelectorAll("input:not([type=file]),textarea,select")];
+      f.v.forEach((v,i) => { if(els[i]) els[i].value = v; }); ponerArch(r, f, c?.codigo); r.querySelectorAll("textarea").forEach(t => t.dispatchEvent(new Event("input"))); }); if(!$(id).children.length) addRow(kind); });
+    if(e.rep && REPDIV){ ponerArch(REPDIV, e.rep, c?.codigo); $("f-rep-box").classList.toggle("hidden", $("f-rep-no").checked); }
+    calc(); show("nueva");
+  } else {
+    const d = e.edit ? (FHIST.docs||[]).find(x => x.codigo===e.edit) : null; if(d) fCargar(d, "editar"); else fNueva();
+    FCOLS = e.cols || null; FCONS = e.cons || null;
+    setCampos(false); setCampos(true);
+    $("fx-rows").innerHTML = ""; (e.filas["fx-rows"]||[]).forEach(f => { fAdd(); const r = $("fx-rows").lastChild; if(f.auto) r.dataset.auto = f.auto; const els = [...r.querySelectorAll("input:not([type=file]),textarea,select")];
+      f.v.forEach((v,i) => { if(els[i]) els[i].value = v; }); ponerArch(r, f, d?.codigo); r.querySelectorAll("textarea").forEach(t => t.dispatchEvent(new Event("input"))); });
+    if(!$("fx-rows").children.length) fAdd();
+    if(!$("fx-ped-igual").checked && $("fx-pedido").value.trim()){ $("fx-ped-box").classList.remove("hidden"); aplicarPedido(false); }
+    if(FCONS && typeof destinoNormal==="function"){ /* consolidado: el destinatario ya quedó en los campos */ }
+    fCalc(); show("fac");
+  }
+}
+async function abrirBorrador(id){
+  const x = (BORR?.items||[]).find(y => y.id===id); if(!x) return; const mod = x.mod, st = $(BMOD[mod].st);
+  const seguir = async () => {
+    st.className = "status"; st.textContent = "Abriendo borrador…";
+    try{
+      const archivos = {};
+      for(const a of x.archivos||[]){ const f = await ghGet(CFG.repoCot, `historial/borradores/${x.id}/${a.id}.bin`); if(!f) continue;
+        archivos[a.id] = new Blob([await descifrar(HKEY, f.bytes.slice(0,12), f.bytes.slice(12))], {type:a.tipo||""}); }
+      await aplicarEstado(mod, x.estado, archivos);
+      filasDe(mod).concat(mod==="cot" && REPDIV ? [REPDIV] : []).forEach(r => [...(r._fotos||[]), ...(r._docs||[])].forEach(f => { if(archivos[f.id]) f.enBorr = x.id; }));
+      BORR_ACT[mod] = x.id; pintarBorr();
+      st.className = "status ok"; st.innerHTML = `📝 Borrador abierto${x.cliente ? ` (<b>${esc(x.cliente)}</b>)` : ""}. Al emitirlo se borra de la lista; si lo dejas otra vez a medias, toca 💾.`;
+    }catch(e){ console.error(e); st.className = "status bad"; st.textContent = "No se pudo abrir el borrador: " + e.message; }
+  };
+  if(BORR_ACT[mod]===id) return;
+  if(formVacio(mod)) return seguir();
+  const {caja, cerrar} = modal(`<h2 style="margin-bottom:6px">📝 Abrir borrador</h2><p class="hint" style="margin-bottom:12px">Tienes una ${BMOD[mod].nom} a medias en pantalla. ¿Qué hago con ella?</p>
+    <div class="actions" style="justify-content:flex-start"><button class="b-navy" id="bo-g">💾 Guardarla como borrador y abrir</button><button class="b-ghost" id="bo-d">Descartarla y abrir</button><button class="b-ghost" data-cerrar>Cancelar</button></div>`);
+  $("bo-g").onclick = async () => { cerrar(); await guardarBorrador(mod); await seguir(); };
+  $("bo-d").onclick = () => { cerrar(); seguir(); };
+}
+async function borrarBorrador(id, silencioso){
+  const x = (BORR?.items||[]).find(y => y.id===id); if(!x) return;
+  await guardarBorr(B => { B.items = B.items.filter(y => y.id!==id); }, `Borrador eliminado${x.cliente ? " · " + x.cliente : ""}`);
+  for(const a of x.archivos||[]){ try{ await ghDel(CFG.repoCot, `historial/borradores/${x.id}/${a.id}.bin`, "Borrador · quitar archivo"); }catch(e){ console.warn(e); } }
+  if(BORR_ACT[x.mod]===id) BORR_ACT[x.mod] = null; pintarBorr();
+}
+async function borrEmitido(mod){   // al emitir: el borrador que estaba abierto ya no hace falta
+  respaldoBorrar(mod); const id = BORR_ACT[mod]; BORR_ACT[mod] = null;
+  if(id){ try{ await borrarBorrador(id, true); }catch(e){ console.warn(e); } }
+}
+function pintarBorr(){
+  ["cot","fac"].forEach(mod => {
+    const sec = $(BMOD[mod].sec); let box = sec.querySelector(".borr-bar");
+    if(!box){ box = document.createElement("div"); box.className = "borr-bar"; sec.insertBefore(box, sec.firstChild); }
+    const L = (BORR?.items||[]).filter(x => x.mod===mod).sort((a,b) => (b.actualizado||"").localeCompare(a.actualizado||""));
+    if(!L.length){ box.innerHTML = ""; box.classList.add("hidden"); return; }
+    const abierto = box.querySelector("details")?.open;
+    box.classList.remove("hidden");
+    box.innerHTML = `<details${abierto ? " open" : ""}><summary>📝 Borradores <span class="borr-n">${L.length}</span><small>toca para ver y continuar</small></summary><div class="borr-l">${L.map(x => `
+      <div class="borr-r${BORR_ACT[mod]===x.id ? " on" : ""}"><button class="borr-ab" data-b="${x.id}"><b>${esc(x.cliente || "(sin cliente)")}</b>${x.tipo ? ` · ${esc(x.tipo)}` : ""}<small>${x.total ? esc(x.total) + " · " : ""}${new Date(x.actualizado).toLocaleString("es-PA", {day:"2-digit", month:"short", hour:"numeric", minute:"2-digit"})}${BORR_ACT[mod]===x.id ? " · abierto" : ""}</small></button>
+      <button class="b-ghost b-sm borr-x" data-x="${x.id}" title="Eliminar borrador">🗑</button></div>`).join("")}</div></details>`;
+    box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => abrirBorrador(b.dataset.b));
+    box.querySelectorAll("[data-x]").forEach(b => b.onclick = () => { const x = L.find(y => y.id===b.dataset.x);
+      const {caja, cerrar} = modal(`<h2 style="margin-bottom:6px">🗑 Eliminar borrador</h2><p class="hint" style="margin-bottom:12px">Se elimina el borrador de <b>${esc(x.cliente || "(sin cliente)")}</b> con sus fotos y anexos. No se puede deshacer.</p>
+        <div class="actions"><button class="b-ghost" data-cerrar>Cancelar</button><button class="b-red" id="bx-ok">Eliminar</button></div>`);
+      $("bx-ok").onclick = async () => { $("bx-ok").disabled = true; try{ await borrarBorrador(x.id); cerrar(); }catch(e){ $("bx-ok").disabled = false; alertaB(mod, "No se pudo eliminar: " + e.message); } }; });
+  });
+}
+const alertaB = (mod, t) => { const st = $(BMOD[mod].st); st.className = "status bad"; st.textContent = t; };
+/* respaldo local (solo este equipo, cifrado): si se cierra la pestaña a mitad, al volver ofrece recuperarlo */
+const RKEY = mod => "lean-respaldo-" + mod; const RTIMER = {};
+async function respaldoGuardar(mod){ try{ if(!HKEY) return; if(formVacio(mod)){ store.del(RKEY(mod)); return; }
+  const enc = await cifrar(HKEY, te.encode(JSON.stringify({t:new Date().toISOString(), borr:BORR_ACT[mod], ...resumenB(mod), estado:capturar(mod)})));
+  store.set(RKEY(mod), JSON.stringify({iv:b64(enc.iv), ct:b64(enc.ct)})); }catch(e){} }
+const respaldoBorrar = mod => store.del(RKEY(mod));
+["cot","fac"].forEach(mod => { const sec = $(BMOD[mod].sec); const prog = () => { clearTimeout(RTIMER[mod]); RTIMER[mod] = setTimeout(() => respaldoGuardar(mod), 1500); };
+  sec.addEventListener("input", prog); sec.addEventListener("change", prog); });
+addEventListener("pagehide", () => { ["cot","fac"].forEach(mod => { if(RTIMER[mod]){ clearTimeout(RTIMER[mod]); respaldoGuardar(mod); } }); });
+async function respaldoOfrecer(){
+  for(const mod of ["cot","fac"]){ const raw = store.get(RKEY(mod)); if(!raw) continue;
+    let r; try{ const j = JSON.parse(raw); r = JSON.parse(td.decode(await descifrar(HKEY, unb64(j.iv), unb64(j.ct)))); }catch(e){ respaldoBorrar(mod); continue; }
+    const st = $(BMOD[mod].st);
+    st.className = "status warn"; st.innerHTML = `Quedó una ${BMOD[mod].nom} sin terminar${r.cliente ? ` de <b>${esc(r.cliente)}</b>` : ""} (${new Date(r.t).toLocaleString("es-PA", {day:"2-digit", month:"short", hour:"numeric", minute:"2-digit"})}). <button class="b-navy b-sm" id="rs-${mod}-ok">Recuperar</button> <button class="b-ghost b-sm" id="rs-${mod}-no">Descartar</button>`;
+    $(`rs-${mod}-ok`).onclick = async () => { await aplicarEstado(mod, r.estado, {}); BORR_ACT[mod] = r.borr || null; pintarBorr(); st.className = "status ok";
+      st.textContent = "✓ Recuperado." + (blobsFaltan(r.estado) ? " Las fotos o anexos nuevos no se respaldan en el equipo: vuelve a agregarlos (o guárdalo con 💾 para que queden en el borrador)." : ""); };
+    $(`rs-${mod}-no`).onclick = () => { respaldoBorrar(mod); st.textContent = ""; };
+  }
+}
+const blobsFaltan = e => Object.values(e.filas||{}).some(L => L.some(r => r.fotos.some(f => !f.subido && !f.src) || r.docs.some(x => !x.subido && !x.src)));
+$("btn-borr").onclick = () => guardarBorrador("cot");
+$("fx-borr").onclick = () => guardarBorrador("fac");
+$("btn-limpiar").addEventListener("click", () => { BORR_ACT.cot = null; respaldoBorrar("cot"); pintarBorr(); });
+$("fx-limpiar").addEventListener("click", () => { BORR_ACT.fac = null; respaldoBorrar("fac"); pintarBorr(); });
+async function iniciarBorr(){ try{ await cargarBorr(); }catch(e){ console.warn(e); BORR = {v:1, items:[]}; } pintarBorr(); respaldoOfrecer(); }
 
 </script>
 </body>
