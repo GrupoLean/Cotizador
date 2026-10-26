@@ -318,6 +318,13 @@
 .borr-ab{flex:1;text-align:left;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--text);font:inherit;min-width:0}
 .borr-ab small{display:block;color:var(--muted);font-size:.8em;margin-top:2px}
 @media (max-width:640px){ .actions > .b-borr{flex:0 0 auto} .b-borr span{display:none} }
+.em-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.em-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tel507{position:relative}
+.tel507 > span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#A3AEBD;font-size:15px;pointer-events:none}
+.tel507 > input{padding-left:54px}
+.tel507.intl > span{display:none}.tel507.intl > input{padding-left:12px}
+@media (max-width:640px){ .em-cols{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -504,14 +511,19 @@
       <label class="chk"><input type="checkbox" id="fx-em-igual" checked> Usar mis datos de siempre</label>
       <div class="hint" id="fx-em-res" style="margin-top:2px"></div>
       <div id="fx-em-box" class="hidden" style="margin-top:10px">
-        <div class="grid g2">
-          <div><label>Nombre de la empresa</label><input type="text" id="fx-em-nom" class="in" maxlength="80"></div>
-          <div><label style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Identificación
-              <span class="seg seg-mini"><label class="segopt"><input type="radio" name="fx-em-rt" value="RUC" checked hidden> RUC</label><label class="segopt"><input type="radio" name="fx-em-rt" value="CIP" hidden> CIP</label></span></label>
-            <input type="text" id="fx-em-ruc" class="in" maxlength="60" placeholder="Opcional (ej. 155xxxxxx-2-2026 DV 00)"></div>
-          <div><label>Dirección</label><input type="text" id="fx-em-dir" class="in" maxlength="120"></div>
-          <div><label>Email</label><input type="email" id="fx-em-email" class="in" maxlength="80" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-          <div class="grid g2" style="gap:10px"><div><label>Teléfono</label><input type="text" id="fx-em-tel" class="in" maxlength="40" inputmode="tel"></div><div><label>Móvil</label><input type="text" id="fx-em-movil" class="in" maxlength="40" inputmode="tel"></div></div>
+        <div class="em-cols">
+          <div class="em-col">
+            <div><label>Nombre de la empresa</label><input type="text" id="fx-em-nom" class="in" maxlength="80"></div>
+            <div><label>Dirección</label><input type="text" id="fx-em-dir" class="in" maxlength="120"></div>
+            <div><label>Email</label><input type="email" id="fx-em-email" class="in" maxlength="80" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+          </div>
+          <div class="em-col">
+            <div><label style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Identificación
+                <span class="seg seg-mini"><label class="segopt"><input type="radio" name="fx-em-rt" value="RUC" checked hidden> RUC</label><label class="segopt"><input type="radio" name="fx-em-rt" value="CIP" hidden> CIP</label></span></label>
+              <input type="text" id="fx-em-ruc" class="in" maxlength="60" placeholder="Opcional (ej. 155xxxxxx-2-2026 DV 00)"></div>
+            <div><label>Teléfono</label><div class="tel507"><span>+507</span><input type="text" id="fx-em-tel" class="in" maxlength="40" inputmode="tel" data-tel placeholder="310-4763"></div></div>
+            <div><label>Móvil</label><div class="tel507"><span>+507</span><input type="text" id="fx-em-movil" class="in" maxlength="40" inputmode="tel" data-tel placeholder="6840-4243"></div></div>
+          </div>
         </div>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="fx-em-fijar" checked> Guardar como mis datos de siempre (para los próximos documentos)</label>
       </div>
@@ -2487,7 +2499,7 @@ $("rp-ec").onclick = async () => {
       <div id="ec-em-box" class="hidden" style="margin-top:8px"><div class="grid g2">
         <div><label>Nombre de la empresa</label><input type="text" class="in" id="ec-em-nom"></div>
         <div><label style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Identificación <span class="seg seg-mini"><label class="segopt"><input type="radio" name="ec-em-rt" value="RUC" checked hidden> RUC</label><label class="segopt"><input type="radio" name="ec-em-rt" value="CIP" hidden> CIP</label></span></label><input type="text" class="in" id="ec-em-ruc" placeholder="Opcional"></div>
-        <div><label>Dirección</label><input type="text" class="in" id="ec-em-dir"></div><div><label>Email</label><input type="email" class="in" id="ec-em-email"></div><div><label>Teléfono</label><input type="text" class="in" id="ec-em-tel"></div><div><label>Móvil</label><input type="text" class="in" id="ec-em-movil"></div></div></div>
+        <div><label>Dirección</label><input type="text" class="in" id="ec-em-dir"></div><div><label>Email</label><input type="email" class="in" id="ec-em-email"></div><div><label>Teléfono</label><div class="tel507"><span>+507</span><input type="text" class="in" id="ec-em-tel" data-tel inputmode="tel"></div></div><div><label>Móvil</label><div class="tel507"><span>+507</span><input type="text" class="in" id="ec-em-movil" data-tel inputmode="tel"></div></div></div></div>
     </div>
     <div class="box" id="ec-res" style="background:var(--blue-bg);margin-top:12px"></div>
     <div class="status" id="ec-st"></div>
@@ -2504,10 +2516,10 @@ $("rp-ec").onclick = async () => {
         compartirPara(paraDe({cliente:x.cliente}), pdf, nombreEC({numero:x.numero, cliente:x.cliente, corte:x.fecha}) + ".pdf", `Estado de cuenta ${x.numero} · Grupo Σ LEAN`, st, mensajeWA("Estado de cuenta", {numero:x.numero, cliente:x.cliente}, url)); }
       catch(e){ st.className = "status bad"; st.textContent = "No se pudo: " + e.message; } }); };
   pintarEmitidos();
-  const ed = emisorDef(); $("ec-em-nom").value = ed.nombre||""; $("ec-em-ruc").value = ed.ruc||""; $("ec-em-dir").value = ed.direccion||""; $("ec-em-email").value = ed.email||""; $("ec-em-tel").value = ed.telefono||""; $("ec-em-movil").value = ed.movil||"";
+  const ed = emisorDef(); $("ec-em-nom").value = ed.nombre||""; $("ec-em-ruc").value = ed.ruc||""; $("ec-em-dir").value = ed.direccion||""; $("ec-em-email").value = ed.email||""; setVal("ec-em-tel", ed.telefono); setVal("ec-em-movil", ed.movil);
   caja.querySelector(`input[name="ec-em-rt"][value="${ed.rucTipo==="CIP" ? "CIP" : "RUC"}"]`).checked = true;
   const emis = () => caja.querySelector('input[name="ec-em"]:checked').value==="igual" ? ed
-    : {nombre:$("ec-em-nom").value.trim(), rucTipo:caja.querySelector('input[name="ec-em-rt"]:checked').value, ruc:$("ec-em-ruc").value.trim(), direccion:$("ec-em-dir").value.trim(), email:$("ec-em-email").value.trim(), telefono:$("ec-em-tel").value.trim(), movil:$("ec-em-movil").value.trim()};
+    : {nombre:$("ec-em-nom").value.trim(), rucTipo:caja.querySelector('input[name="ec-em-rt"]:checked').value, ruc:$("ec-em-ruc").value.trim(), direccion:$("ec-em-dir").value.trim(), email:$("ec-em-email").value.trim(), telefono:getVal("ec-em-tel"), movil:getVal("ec-em-movil")};
   const armar = () => ({...armarEC($("ec-cli").value, $("ec-desde").value, $("ec-hasta").value, $("ec-pend").checked), emisor: emis()});
   const resumen = () => { const ed2 = caja.querySelector('input[name="ec-em"]:checked').value==="igual"; $("ec-em-box").classList.toggle("hidden", ed2);
     $("ec-em-res").textContent = ed2 ? [ed.nombre, idEmisor(ed)].filter(Boolean).join(" · ") : "Estos datos solo se usan en este estado de cuenta.";
@@ -2914,6 +2926,13 @@ function setHView(v){
   v==="cot" ? pintarHist() : pintarFac();
 }
 /* ----- datos del emisor (editables; ocultos por defecto) ----- */
+/* teléfonos con +507 fijo (en gris): se escribe solo el número; si empiezas con «+» es otro país y el +507 se oculta */
+const telVer = v => String(v||"").trim().replace(/^\+507\s*/, "");
+const telGuardar = v => { v = String(v||"").trim(); return !v ? "" : v.startsWith("+") ? v : "+507 " + v; };
+function telPrefijo(el){ const w = el.closest(".tel507"); if(w) w.classList.toggle("intl", el.value.trim().startsWith("+")); }
+const setVal = (id, v) => { const el = $(id); if(!el) return; el.value = el.hasAttribute("data-tel") ? telVer(v) : (v || ""); if(el.hasAttribute("data-tel")) telPrefijo(el); };
+const getVal = id => { const el = $(id); if(!el) return ""; return el.hasAttribute("data-tel") ? telGuardar(el.value) : el.value.trim(); };
+document.addEventListener("input", e => { if(e.target.matches?.("[data-tel]")) telPrefijo(e.target); });
 const EMISOR_DEF = {nombre:"Grupo Σ LEAN", rucTipo:"RUC", ruc:"", direccion:"Tocumen, Nuevo Belen, calle agua buena, ofi: A-01", email:"etrejos24@gmail.com", telefono:"+507 310-4763", movil:"+507 6840-4243"};
 const EM_CAMPOS = [["nombre","fx-em-nom"],["ruc","fx-em-ruc"],["direccion","fx-em-dir"],["email","fx-em-email"],["telefono","fx-em-tel"],["movil","fx-em-movil"]];
 const sinCIP = e => e?.rucTipo==="CIP" ? {...e, rucTipo:"RUC", ruc:""} : e;   // los datos de siempre van con RUC: un CIP solo vale para el documento donde se escribe
@@ -2923,14 +2942,14 @@ const idEmisor = e => e?.ruc ? (/^(ruc|cip)\b/i.test(e.ruc.trim()) ? e.ruc.trim(
 function pintarEmisor(em){   // em = datos del documento (o null = los de siempre)
   const igual = !em || mismoEmisor(em, emisorDef()), v = em || emisorDef();
   $("fx-em-igual").checked = igual; $("fx-em-box").classList.toggle("hidden", igual);
-  EM_CAMPOS.forEach(([k,id]) => $(id).value = v[k] || ""); setRt(v.rucTipo); $("fx-em-fijar").checked = true; resumenEmisor();
+  EM_CAMPOS.forEach(([k,id]) => setVal(id, v[k])); setRt(v.rucTipo); $("fx-em-fijar").checked = true; resumenEmisor();
 }
 const setRt = t => { const r = document.querySelector(`input[name="fx-em-rt"][value="${t==="CIP" ? "CIP" : "RUC"}"]`); if(r) r.checked = true; };
 const getRt = () => document.querySelector('input[name="fx-em-rt"]:checked')?.value || "RUC";
 function resumenEmisor(){ const e = emisorDef(); $("fx-em-res").textContent = $("fx-em-igual").checked ? `${e.nombre}${e.ruc ? " · " + idEmisor(e) : ""}. Quítalo para editar el nombre o agregar tu RUC o CIP.` : ""; }
-function emisorForm(){ if($("fx-em-igual").checked) return emisorDef(); const o = {rucTipo:getRt()}; EM_CAMPOS.forEach(([k,id]) => o[k] = $(id).value.trim()); return o; }
+function emisorForm(){ if($("fx-em-igual").checked) return emisorDef(); const o = {rucTipo:getRt()}; EM_CAMPOS.forEach(([k,id]) => o[k] = getVal(id)); return o; }
 $("fx-em-igual").onchange = () => { const on = $("fx-em-igual").checked; $("fx-em-box").classList.toggle("hidden", on);
-  if(on){ EM_CAMPOS.forEach(([k,id]) => $(id).value = emisorDef()[k] || ""); setRt(emisorDef().rucTipo); } else $("fx-em-nom").focus(); resumenEmisor(); };
+  if(on){ EM_CAMPOS.forEach(([k,id]) => setVal(id, emisorDef()[k])); setRt(emisorDef().rucTipo); } else $("fx-em-nom").focus(); resumenEmisor(); };
 /* ----- control de gasto (interno: se guarda en el historial; no va al PDF ni al portal) ----- */
 const GASTO_C = [["comb","Combustible"],["viv","Víveres"],["mat","Materiales"]];
 const guardaEstado = (o, ks) => o ? Object.fromEntries(ks.filter(k => o[k]!==undefined).map(k => [k, o[k]])) : {};   // al corregir, el documento sigue donde estaba (p. ej. en cuentas por cobrar)
