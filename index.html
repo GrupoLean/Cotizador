@@ -1480,13 +1480,14 @@ function show(v){
   if(v==="hist") setHView(HVIEW);
   window.scrollTo({top:0, behavior:"smooth"}); CARD_FOCO = null; setTimeout(actualizarActiva, 350);
 }
-$("tab-nueva").onclick = () => { if(EDIT) nueva(); show("nueva"); };
+$("tab-nueva").onclick = () => { if(EDIT && LIMPIO.cot) nueva(); show("nueva"); };   // lo que estabas haciendo se queda; solo se limpia si ya lo emitiste
 $("tab-hist").onclick = () => show("hist");
-$("tab-fac").onclick = () => { if(FEDIT) fNueva(); else if($("fx-em-igual").checked) pintarEmisor(null); show("fac"); };
+$("tab-fac").onclick = () => { if(FEDIT && LIMPIO.fac) fNueva(); else if(!FEDIT && $("fx-em-igual").checked && LIMPIO.fac) pintarEmisor(null); show("fac"); };
 $("tab-cxc").onclick = async () => { CXANIM = true; show("cxc"); CXANIM = false; try{ await Promise.all([cargarFac(), recargarHist()]); CXANIM = true; pintarCxc(); animarCxc(); }catch(e){ console.error(e); CXANIM = false; pintarCxc(); } finally{ CXANIM = false; } };
 
 /* ==================== formulario ==================== */
 let EDIT = null;      // registro que se está editando (o null)
+const LIMPIO = {cot:true, fac:true};   // true = el formulario no tiene nada pendiente (vacío o recién emitido)
 function siguienteN(){
   const ns = (HIST?.cotizaciones||[]).map(c=>c.n);
   const base = Math.max(0, ...(ns.length?ns:[0]), Number(HIST?.ultimoExcel||0));
@@ -2029,7 +2030,8 @@ function preguntarAnexos(c){
   caja.querySelector("#an-pasar").onclick = () => { cerrar(); FPED_ANEX = c.codigo; pasarAnexos(c); fCalc();
     $("fx-status").className = "status ok"; $("fx-status").textContent += ` · Anexos de la cotización agregados (${que}).`; };
 }
-function facturarCot(c, tipo){
+function facturarCot(c, tipo){ antesDeLimpiar("fac", () => facturarCot_(c, tipo)); }
+function facturarCot_(c, tipo){
   fNueva(); show("fac");
   const r = document.querySelector(`input[name="fx-tipo"][value="${tipo}"]`); r.checked = true; r.dispatchEvent(new Event("change", {bubbles:true}));
   $("fx-ped-igual").checked = false; $("fx-ped-box").classList.remove("hidden");
@@ -2223,12 +2225,12 @@ function pintarHist(){
     }
     if(b.dataset.a==="ver") verCot(c).catch(e => { $("h-status").className = "status bad"; $("h-status").textContent = "No se pudo armar el PDF: " + e.message; });
     if(b.dataset.a==="pdf") bytesCot(c).then(bytes => bajarBytes(bytes, nombrePDF(c))).catch(e => { $("h-status").className = "status bad"; $("h-status").textContent = "No se pudo armar el PDF: " + e.message; });
-    if(b.dataset.a==="edit") cargar(c, "editar");
+    if(b.dataset.a==="edit") return antesDeLimpiar("cot", () => cargar(c, "editar"));
     if(b.dataset.a==="anular" || b.dataset.a==="react") return pedirAnular("cot", c, b.dataset.a==="anular");
     if(b.dataset.a==="cxc") return pedirCxc("cot", c);
     if(b.dataset.a==="facturar") return pedirFacturar(c);
     if(b.dataset.a==="aprobar") return pedirAprobar(c);
-    if(b.dataset.a==="dup") cargar(c, "duplicar");
+    if(b.dataset.a==="dup") return antesDeLimpiar("cot", () => cargar(c, "duplicar"));
   });
 }
 function pedirAprobar(c){   // el cliente eligió una opción: esa es la que vale para montos, cobro y recibos
@@ -3079,10 +3081,10 @@ function pintarFac(){
     if(b.dataset.f==="pdf") bajarPDF(fPdf(d), fNombre(d));
     if(b.dataset.f==="xml") bajarXML(d);
     if(b.dataset.f==="share") compartirPara(paraDe(d), pdfBytes(fPdf(d)), fNombre(d), `${d.tipo} ${d.numero} · Grupo Σ LEAN`, $("h-status"), mensajeWA(d.tipo, d, fUrl(d)));
-    if(b.dataset.f==="edit") fCargar(d, "editar");
+    if(b.dataset.f==="edit") return antesDeLimpiar("fac", () => fCargar(d, "editar"));
     if(b.dataset.f==="anular" || b.dataset.f==="react") return pedirAnular("fac", d, b.dataset.f==="anular");
     if(b.dataset.f==="cxc") return pedirCxc("fac", d);
-    if(b.dataset.f==="dup") fCargar(d, "duplicar");
+    if(b.dataset.f==="dup") return antesDeLimpiar("fac", () => fCargar(d, "duplicar"));
   });
 }
 /* detalle de filas para Excel: columnas fijas + todas las columnas (configurables o viejas) que tengan datos + enlaces a las fotos */
@@ -3220,7 +3222,7 @@ $("h-cons").onclick = async () => {
   caja.querySelectorAll('input[name="cs-tipo"]').forEach(r => r.onchange = clientes); $("cs-cli").onchange = lista; clientes();
   $("cs-ok").onclick = () => {
     const sel = [...caja.querySelectorAll(".cs-d:checked")].map(c => todosFac().find(d => d.codigo===c.value)).sort((a,b) => a.n-b.n); if(sel.length < 2) return;
-    cerrar(); fNueva(); show("fac"); const t = tipo();
+    const t = tipo(); cerrar(); antesDeLimpiar("fac", () => { fNueva(); show("fac");
     const r = document.querySelector(`input[name="fx-tipo"][value="${t}"]`); r.checked = true; r.dispatchEvent(new Event("change", {bubbles:true}));
     destinoCons(sel);
     FCONS = {tipo:t, docs: sel.map(d => ({codigo:d.codigo, numero:d.numero, total:r2(d.total), saldo:saldoDe(d)}))};
@@ -3229,7 +3231,7 @@ $("h-cons").onclick = async () => {
       $("fx-rows").lastChild.dataset.auto = "cons"; });
     fCalc(); $("fx-status").className = "status ok";
     $("fx-status").textContent = `🧩 Consolidado de ${t==="Factura"?"facturas":"recibos"} ${sel.map(d => d.numero).join(", ")} preparado. Revisa y pulsa «Emitir y publicar».`;
-    setTimeout(() => $("fx-rows").scrollIntoView({behavior:"smooth", block:"center"}), 300);
+    setTimeout(() => $("fx-rows").scrollIntoView({behavior:"smooth", block:"center"}), 300); });
   };
 };
 /* ----- Pedido N.º enlazado a una cotización ----- */
@@ -4584,7 +4586,7 @@ async function borrarBorrador(id, silencioso){
   if(BORR_ACT[x.mod]===id) BORR_ACT[x.mod] = null; pintarBorr();
 }
 async function borrEmitido(mod){   // al emitir: el borrador que estaba abierto ya no hace falta
-  respaldoBorrar(mod); const id = BORR_ACT[mod]; BORR_ACT[mod] = null;
+  respaldoBorrar(mod); LIMPIO[mod] = true; const id = BORR_ACT[mod]; BORR_ACT[mod] = null;
   if(id){ try{ await borrarBorrador(id, true); }catch(e){ console.warn(e); } }
 }
 function pintarBorr(){
@@ -4606,19 +4608,33 @@ function pintarBorr(){
   });
 }
 const alertaB = (mod, t) => { const st = $(BMOD[mod].st); st.className = "status bad"; st.textContent = t; };
+/* antes de reemplazar un formulario a medias (corregir otro documento, facturar una cotización…): ofrecer guardarlo */
+function antesDeLimpiar(mod, seguir){
+  if(LIMPIO[mod] || formVacio(mod)) return seguir();
+  const {caja, cerrar} = modal(`<h2 style="margin-bottom:6px">Tienes ${mod==="cot" ? "una cotización" : "un recibo / factura"} a medias</h2><p class="hint" style="margin-bottom:12px">¿Qué hago con lo que estabas llenando?</p>
+    <div class="actions" style="justify-content:flex-start"><button class="b-navy" id="al-g">💾 Guardarlo como borrador y seguir</button><button class="b-ghost" id="al-d">Descartarlo y seguir</button><button class="b-ghost" data-cerrar>Cancelar</button></div>`);
+  $("al-g").onclick = async () => { cerrar(); await guardarBorrador(mod); if(formVacio(mod)) seguir(); };
+  $("al-d").onclick = () => { cerrar(); respaldoBorrar(mod); seguir(); };
+}
 /* respaldo local (solo este equipo, cifrado): si se cierra la pestaña a mitad, al volver ofrece recuperarlo */
 const RKEY = mod => "lean-respaldo-" + mod; const RTIMER = {};
 async function respaldoGuardar(mod){ try{ if(!HKEY) return; if(formVacio(mod)){ store.del(RKEY(mod)); return; }
   const enc = await cifrar(HKEY, te.encode(JSON.stringify({t:new Date().toISOString(), borr:BORR_ACT[mod], ...resumenB(mod), estado:capturar(mod)})));
   store.set(RKEY(mod), JSON.stringify({iv:b64(enc.iv), ct:b64(enc.ct)})); }catch(e){} }
 const respaldoBorrar = mod => store.del(RKEY(mod));
-["cot","fac"].forEach(mod => { const sec = $(BMOD[mod].sec); const prog = () => { clearTimeout(RTIMER[mod]); RTIMER[mod] = setTimeout(() => respaldoGuardar(mod), 1500); };
+["cot","fac"].forEach(mod => { const sec = $(BMOD[mod].sec); const prog = () => { LIMPIO[mod] = false; clearTimeout(RTIMER[mod]); RTIMER[mod] = setTimeout(() => respaldoGuardar(mod), 1500); };
   sec.addEventListener("input", prog); sec.addEventListener("change", prog); });
 addEventListener("pagehide", () => { ["cot","fac"].forEach(mod => { if(RTIMER[mod]){ clearTimeout(RTIMER[mod]); respaldoGuardar(mod); } }); });
 async function respaldoOfrecer(){
   for(const mod of ["cot","fac"]){ const raw = store.get(RKEY(mod)); if(!raw) continue;
     let r; try{ const j = JSON.parse(raw); r = JSON.parse(td.decode(await descifrar(HKEY, unb64(j.iv), unb64(j.ct)))); }catch(e){ respaldoBorrar(mod); continue; }
     const st = $(BMOD[mod].st);
+    if(Date.now() - new Date(r.t).getTime() < 24*3600e3){   // la página se recargó (p. ej. el celular la cerró): se recupera sola
+      await aplicarEstado(mod, r.estado, {}); BORR_ACT[mod] = r.borr || null; LIMPIO[mod] = false; pintarBorr(); if(mod==="cot") show("nueva");
+      st.className = "status ok"; st.innerHTML = `↩︎ Recuperé ${mod==="cot" ? "la cotización" : "el recibo / factura"} que estabas haciendo${r.cliente ? ` (<b>${esc(r.cliente)}</b>)` : ""}.${blobsFaltan(r.estado) ? " Vuelve a agregar las fotos o anexos nuevos." : ""} <button class="b-ghost b-sm" id="rs-${mod}-no">Descartar</button>`;
+      $(`rs-${mod}-no`).onclick = () => { respaldoBorrar(mod); BORR_ACT[mod] = null; mod==="cot" ? nueva() : fNueva(); LIMPIO[mod] = true; st.textContent = ""; pintarBorr(); };
+      continue;
+    }
     st.className = "status warn"; st.innerHTML = `Quedó una ${BMOD[mod].nom} sin terminar${r.cliente ? ` de <b>${esc(r.cliente)}</b>` : ""} (${new Date(r.t).toLocaleString("es-PA", {day:"2-digit", month:"short", hour:"numeric", minute:"2-digit"})}). <button class="b-navy b-sm" id="rs-${mod}-ok">Recuperar</button> <button class="b-ghost b-sm" id="rs-${mod}-no">Descartar</button>`;
     $(`rs-${mod}-ok`).onclick = async () => { await aplicarEstado(mod, r.estado, {}); BORR_ACT[mod] = r.borr || null; pintarBorr(); st.className = "status ok";
       st.textContent = "✓ Recuperado." + (blobsFaltan(r.estado) ? " Las fotos o anexos nuevos no se respaldan en el equipo: vuelve a agregarlos (o guárdalo con 💾 para que queden en el borrador)." : ""); };
