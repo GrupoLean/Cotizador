@@ -511,7 +511,7 @@
             <input type="text" id="fx-em-ruc" class="in" maxlength="60" placeholder="Opcional (ej. 155xxxxxx-2-2026 DV 00)"></div>
           <div><label>Dirección</label><input type="text" id="fx-em-dir" class="in" maxlength="120"></div>
           <div><label>Email</label><input type="email" id="fx-em-email" class="in" maxlength="80" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-          <div><label>Teléfono</label><input type="text" id="fx-em-tel" class="in" maxlength="40" inputmode="tel"></div>
+          <div class="grid g2" style="gap:10px"><div><label>Teléfono</label><input type="text" id="fx-em-tel" class="in" maxlength="40" inputmode="tel"></div><div><label>Móvil</label><input type="text" id="fx-em-movil" class="in" maxlength="40" inputmode="tel"></div></div>
         </div>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="fx-em-fijar" checked> Guardar como mis datos de siempre (para los próximos documentos)</label>
       </div>
@@ -951,6 +951,7 @@ const FAC_ASSETS={fonts:{...FAC_ASSETS_RAW.fonts, R:ASSETS.fonts.R, B:ASSETS.fon
 /* ===== Generador de PDF · Recibo / Factura Grupo Σ LEAN =====
    Medidas tomadas de Factura_051.pdf (Times, carta, puntos, origen arriba-izquierda). */
 const PDFFAC = (() => {
+  const telEm = em => em.movil ? `${em.telefono ? "Tel: " + em.telefono + "   " : ""}Móvil: ${em.movil}` : (em.telefono || "");   // teléfono y celular en la misma línea
   const C = { navy:[31,56,100], label:[51,51,51], black:[0,0,0], band:[228,233,242], sep:[217,217,217],
               green:[21,128,61], gray:[110,110,110], white:[255,255,255], qr:[31,56,100] };
   const L = 36, Rx = 576, W = Rx - L;
@@ -1012,7 +1013,7 @@ const PDFFAC = (() => {
     const em = d.emisor || {nombre:"Grupo Σ LEAN", direccion:"Tocumen, Nuevo Belen, calle agua buena, ofi: A-01", email:"etrejos24@gmail.com", telefono:"+507 310-4763"};
     const rucE = em.ruc ? (/^(ruc|cip|c[ée]dula)\b/i.test(em.ruc.trim()) ? em.ruc.trim() : `${em.rucTipo==="CIP" ? "CIP" : "RUC"}: ${em.ruc.trim()}`) : "";   // solo se imprime si está lleno
     let ye = 193.7;
-    [em.nombre, rucE, em.direccion, em.email, em.telefono].filter(Boolean).forEach(t => {
+    [em.nombre, rucE, em.direccion, em.email, telEm(em)].filter(Boolean).forEach(t => {
       doc.setFont("Serif","normal"); doc.setFontSize(10.1);
       doc.splitTextToSize(String(t), 255).forEach(ln => { T(doc, ln, 36.5, ye); ye += 13.5; }); });
     T(doc, "DESTINATARIO", 306.5, 176.2, {st:"bold", c:C.label});
@@ -1131,7 +1132,7 @@ const PDFFAC = (() => {
       const em = cab.emisor || {nombre:"Grupo Σ LEAN", direccion:"Tocumen, Nuevo Belen, calle agua buena, ofi: A-01", email:"etrejos24@gmail.com", telefono:"+507 310-4763"};
       const rucE = em.ruc ? (/^(ruc|cip|c[ée]dula)\b/i.test(em.ruc.trim()) ? em.ruc.trim() : `${em.rucTipo==="CIP" ? "CIP" : "RUC"}: ${em.ruc.trim()}`) : "";
       let ye = 193.7, yy = 193.7;
-      [em.nombre, rucE, em.direccion, em.email, em.telefono].filter(Boolean).forEach(t => { doc.setFont("Serif","normal"); doc.setFontSize(10.1); doc.splitTextToSize(String(t), 255).forEach(ln => { T(doc, ln, 36.5, ye); ye += 13.5; }); });
+      [em.nombre, rucE, em.direccion, em.email, telEm(em)].filter(Boolean).forEach(t => { doc.setFont("Serif","normal"); doc.setFontSize(10.1); doc.splitTextToSize(String(t), 255).forEach(ln => { T(doc, ln, 36.5, ye); ye += 13.5; }); });
       T(doc, "CLIENTE", 306.5, 176.2, {st:"bold", c:C.label});
       [cab.cliente, cab.ruc, cab.email, cab.direccion, cab.telefono].filter(Boolean).forEach(t => { doc.setFont("Serif","normal"); doc.setFontSize(10.1); doc.splitTextToSize(String(t), e.url || e.preview ? 178 : 265).forEach(ln => { T(doc, ln, 306.5, yy); yy += 13.5; }); });
       let fin = Math.max(247.7, yy, ye);
@@ -2486,7 +2487,7 @@ $("rp-ec").onclick = async () => {
       <div id="ec-em-box" class="hidden" style="margin-top:8px"><div class="grid g2">
         <div><label>Nombre de la empresa</label><input type="text" class="in" id="ec-em-nom"></div>
         <div><label style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Identificación <span class="seg seg-mini"><label class="segopt"><input type="radio" name="ec-em-rt" value="RUC" checked hidden> RUC</label><label class="segopt"><input type="radio" name="ec-em-rt" value="CIP" hidden> CIP</label></span></label><input type="text" class="in" id="ec-em-ruc" placeholder="Opcional"></div>
-        <div><label>Dirección</label><input type="text" class="in" id="ec-em-dir"></div><div><label>Email</label><input type="email" class="in" id="ec-em-email"></div><div><label>Teléfono</label><input type="text" class="in" id="ec-em-tel"></div></div></div>
+        <div><label>Dirección</label><input type="text" class="in" id="ec-em-dir"></div><div><label>Email</label><input type="email" class="in" id="ec-em-email"></div><div><label>Teléfono</label><input type="text" class="in" id="ec-em-tel"></div><div><label>Móvil</label><input type="text" class="in" id="ec-em-movil"></div></div></div>
     </div>
     <div class="box" id="ec-res" style="background:var(--blue-bg);margin-top:12px"></div>
     <div class="status" id="ec-st"></div>
@@ -2503,10 +2504,10 @@ $("rp-ec").onclick = async () => {
         compartirPara(paraDe({cliente:x.cliente}), pdf, nombreEC({numero:x.numero, cliente:x.cliente, corte:x.fecha}) + ".pdf", `Estado de cuenta ${x.numero} · Grupo Σ LEAN`, st, mensajeWA("Estado de cuenta", {numero:x.numero, cliente:x.cliente}, url)); }
       catch(e){ st.className = "status bad"; st.textContent = "No se pudo: " + e.message; } }); };
   pintarEmitidos();
-  const ed = emisorDef(); $("ec-em-nom").value = ed.nombre||""; $("ec-em-ruc").value = ed.ruc||""; $("ec-em-dir").value = ed.direccion||""; $("ec-em-email").value = ed.email||""; $("ec-em-tel").value = ed.telefono||"";
+  const ed = emisorDef(); $("ec-em-nom").value = ed.nombre||""; $("ec-em-ruc").value = ed.ruc||""; $("ec-em-dir").value = ed.direccion||""; $("ec-em-email").value = ed.email||""; $("ec-em-tel").value = ed.telefono||""; $("ec-em-movil").value = ed.movil||"";
   caja.querySelector(`input[name="ec-em-rt"][value="${ed.rucTipo==="CIP" ? "CIP" : "RUC"}"]`).checked = true;
   const emis = () => caja.querySelector('input[name="ec-em"]:checked').value==="igual" ? ed
-    : {nombre:$("ec-em-nom").value.trim(), rucTipo:caja.querySelector('input[name="ec-em-rt"]:checked').value, ruc:$("ec-em-ruc").value.trim(), direccion:$("ec-em-dir").value.trim(), email:$("ec-em-email").value.trim(), telefono:$("ec-em-tel").value.trim()};
+    : {nombre:$("ec-em-nom").value.trim(), rucTipo:caja.querySelector('input[name="ec-em-rt"]:checked').value, ruc:$("ec-em-ruc").value.trim(), direccion:$("ec-em-dir").value.trim(), email:$("ec-em-email").value.trim(), telefono:$("ec-em-tel").value.trim(), movil:$("ec-em-movil").value.trim()};
   const armar = () => ({...armarEC($("ec-cli").value, $("ec-desde").value, $("ec-hasta").value, $("ec-pend").checked), emisor: emis()});
   const resumen = () => { const ed2 = caja.querySelector('input[name="ec-em"]:checked').value==="igual"; $("ec-em-box").classList.toggle("hidden", ed2);
     $("ec-em-res").textContent = ed2 ? [ed.nombre, idEmisor(ed)].filter(Boolean).join(" · ") : "Estos datos solo se usan en este estado de cuenta.";
@@ -2814,7 +2815,7 @@ function xmlDe(d){
 ${tag("Numero", d.numero)}${tag("PedidoNumero", d.pedido)}${tag("FechaEmision", d.fecha)}${tag("FechaVencimiento", d.vence)}    <Moneda>USD</Moneda>
 ${tag("CodigoValidacion", d.codigo)}${tag("UrlValidacion", fUrl(d))}${d.anulado ? tag("Anulado", d.anulado.fecha) : ""}  </Encabezado>
   <Emisor>
-${(e => tag("Nombre", e.nombre) + tag("CIP_RUC", idEmisor(e)) + tag("Direccion", e.direccion) + tag("Correo", e.email) + tag("Telefono", e.telefono))(d.emisor || EMISOR_DEF)}  </Emisor>
+${(e => tag("Nombre", e.nombre) + tag("CIP_RUC", idEmisor(e)) + tag("Direccion", e.direccion) + tag("Correo", e.email) + tag("Telefono", e.telefono) + tag("Movil", e.movil))(d.emisor || EMISOR_DEF)}  </Emisor>
   <Receptor>
 ${tag("Nombre", d.cliente)}${tag("CIP_RUC", d.ruc)}${tag("Direccion", d.direccion)}${tag("Telefono", d.telefono)}  </Receptor>
   <Detalle>
@@ -2913,8 +2914,8 @@ function setHView(v){
   v==="cot" ? pintarHist() : pintarFac();
 }
 /* ----- datos del emisor (editables; ocultos por defecto) ----- */
-const EMISOR_DEF = {nombre:"Grupo Σ LEAN", rucTipo:"RUC", ruc:"", direccion:"Tocumen, Nuevo Belen, calle agua buena, ofi: A-01", email:"etrejos24@gmail.com", telefono:"+507 310-4763"};
-const EM_CAMPOS = [["nombre","fx-em-nom"],["ruc","fx-em-ruc"],["direccion","fx-em-dir"],["email","fx-em-email"],["telefono","fx-em-tel"]];
+const EMISOR_DEF = {nombre:"Grupo Σ LEAN", rucTipo:"RUC", ruc:"", direccion:"Tocumen, Nuevo Belen, calle agua buena, ofi: A-01", email:"etrejos24@gmail.com", telefono:"+507 310-4763", movil:"+507 6840-4243"};
+const EM_CAMPOS = [["nombre","fx-em-nom"],["ruc","fx-em-ruc"],["direccion","fx-em-dir"],["email","fx-em-email"],["telefono","fx-em-tel"],["movil","fx-em-movil"]];
 const sinCIP = e => e?.rucTipo==="CIP" ? {...e, rucTipo:"RUC", ruc:""} : e;   // los datos de siempre van con RUC: un CIP solo vale para el documento donde se escribe
 const emisorDef = () => sinCIP({...EMISOR_DEF, ...(AJ().emisor || {})});
 const mismoEmisor = (a, b) => EM_CAMPOS.every(([k]) => String(a?.[k]||"").trim() === String(b?.[k]||"").trim()) && (a?.rucTipo||"RUC") === (b?.rucTipo||"RUC");
