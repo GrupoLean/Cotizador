@@ -334,6 +334,13 @@
 .alt-res div{flex:1 1 200px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .alt-res span{color:var(--muted);font-size:13px}.alt-res b{color:var(--navy);font-size:20px}
 .fx-op-b.on{border-color:var(--orange);background:#FFF8E6}
+.sum-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:nowrap;margin-top:12px}
+.sum-row .sum{margin-top:0;margin-left:auto;min-width:0}
+.opb-in{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px dashed #C9D3E0;border-radius:999px;background:#FAFBFD;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap;text-transform:none;letter-spacing:0;margin:0;flex:0 0 auto}
+.opb-in.on{border:1px solid var(--orange);background:#FFF8E6}
+.opb-in input{width:18px;height:18px;margin:0}
+.opb-card{margin-top:-6px}
+@media (max-width:640px){ .sum-row .lg{display:none} .sum-row .sum span{white-space:nowrap} .sum-row .sum div{gap:10px;min-width:0} .sum-row .sum{font-size:13px} .sum-row .sum .big{font-size:15px} .opb-in{font-size:13px;padding:6px 10px} }
 </style>
 </head>
 <body>
@@ -421,16 +428,11 @@
           <div class="thead"><span>#</span><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Total</span><span></span></div>
           <div class="rows" id="rows-mat"></div>
           <button class="b-ghost b-sm" style="margin-top:10px" data-add="mat">+ Agregar fila</button>
-          <div class="sum"><div><span>SUB-TOTAL</span><b id="mat-sub">$0.00</b></div><div><span>ITBMS (7%)</span><b id="mat-itbms">$0.00</b></div><div class="big"><span>TOTAL MATERIALES</span><b id="mat-total">$0.00</b></div></div>
+          <div class="sum-row"><label class="opb-in" id="opb-mat-lbl" title="Quítalo para cotizar otra alternativa de esta hoja"><input type="checkbox" id="opb-mat-no" checked> Sin opción B</label><div class="sum"><div><span>SUB-TOTAL</span><b id="mat-sub">$0.00</b></div><div><span>ITBMS (7%)</span><b id="mat-itbms">$0.00</b></div><div class="big"><span>TOTAL<span class="lg"> MATERIALES</span></span><b id="mat-total">$0.00</b></div></div></div>
         </div>
       </div>
     </div>
 
-    <div class="card opb-bar">
-      <h3>Opción B</h3>
-      <label class="chk"><input type="checkbox" id="opb-mat-no" checked> Sin opción B de materiales</label>
-      <div class="hint" style="margin-top:2px">Quítalo para cotizar otra alternativa de materiales: se abre una copia de la hoja de arriba para cambiar solo lo distinto.</div>
-    </div>
     <div class="card opb-card hidden" id="card-matB">
       <div class="part" id="part-matB">
         <div class="part-h"><span><span class="op-tag">OPCIÓN B</span>HOJA 1 · COTIZACIÓN DE MATERIALES</span> <label class="sw"><input type="checkbox" id="inc-matB" checked> Incluir</label></div>
@@ -456,16 +458,11 @@
           <div class="grid g2" style="margin-top:14px">
             <div><label>Tiempo de intervención · Duración estimada</label><input type="text" id="f-dur" class="in" value="3 - 5 horas"></div>
           </div>
-          <div class="sum"><div class="big"><span>SUB-TOTAL MANO DE OBRA</span><b id="mo-sub">$0.00</b></div></div>
+          <div class="sum-row"><label class="opb-in" id="opb-mo-lbl" title="Quítalo para cotizar otra alternativa de esta hoja"><input type="checkbox" id="opb-mo-no" checked> Sin opción B</label><div class="sum"><div class="big"><span>SUB-TOTAL<span class="lg"> MANO DE OBRA</span></span><b id="mo-sub">$0.00</b></div></div></div>
         </div>
       </div>
     </div>
 
-    <div class="card opb-bar">
-      <h3>Opción B</h3>
-      <label class="chk"><input type="checkbox" id="opb-mo-no" checked> Sin opción B de mano de obra</label>
-      <div class="hint" style="margin-top:2px">Quítalo para cotizar otra alternativa de mano de obra. Si no la abres, esta mano de obra vale para las dos opciones.</div>
-    </div>
     <div class="card opb-card hidden" id="card-moB">
       <div class="part" id="part-moB">
         <div class="part-h"><span><span class="op-tag">OPCIÓN B</span>HOJA 2 · COTIZACIÓN DE MANO DE OBRA</span> <label class="sw"><input type="checkbox" id="inc-moB" checked> Incluir</label></div>
@@ -1540,6 +1537,9 @@ function calc(){
   // opción B
   const opMat = opbAbierta("mat"), opMo = opbAbierta("mo");
   $("card-matB").classList.toggle("hidden", !opMat); $("card-moB").classList.toggle("hidden", !opMo);
+  $("opb-mat-lbl").classList.toggle("on", opMat); $("opb-mo-lbl").classList.toggle("on", opMo);
+  $("opb-mat-lbl").title = opMat ? "Opción B abierta abajo · márcalo para quitarla" : "Quítalo para cotizar otra alternativa de materiales";
+  $("opb-mo-lbl").title = opMo ? "Opción B abierta abajo · márcalo para quitarla" : "Quítalo para cotizar otra alternativa de mano de obra";
   $("part-matB").classList.toggle("off", !$("inc-matB").checked); $("part-moB").classList.toggle("off", !$("inc-moB").checked);
   const tb = totales(leerItems("matB"), leerItems("moB"), true, true);
   $("matB-sub").textContent = money(tb.matSub); $("matB-itbms").textContent = money(tb.matItbms); $("matB-total").textContent = money(tb.matTotal); $("moB-sub").textContent = money(tb.moSub);
