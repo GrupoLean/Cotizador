@@ -325,6 +325,15 @@
 .tel507 > input{padding-left:54px}
 .tel507.intl > span{display:none}.tel507.intl > input{padding-left:12px}
 @media (max-width:640px){ .em-cols{grid-template-columns:1fr} }
+.op-tag{display:inline-block;background:var(--orange);color:#fff;border-radius:6px;padding:1px 8px;margin-right:8px;font-size:.92em;font-weight:800}
+.op-tag.com{background:#5B6878}
+.op-tit{margin:0 0 12px}
+.opb-bar{padding:14px 18px!important}.opb-bar h3{margin:0 0 6px;font-size:15px;color:var(--navy)}
+.opb-card{border:2px solid var(--orange)!important}
+.alt-res{display:flex;gap:10px;flex-wrap:wrap;flex:1 1 100%}
+.alt-res div{flex:1 1 200px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.alt-res span{color:var(--muted);font-size:13px}.alt-res b{color:var(--navy);font-size:20px}
+.fx-op-b.on{border-color:var(--orange);background:#FFF8E6}
 </style>
 </head>
 <body>
@@ -406,8 +415,9 @@
 
     <div class="card">
       <div class="part" id="part-mat">
-        <div class="part-h">HOJA 1 · COTIZACIÓN DE MATERIALES <label class="sw"><input type="checkbox" id="inc-mat" checked> Incluir</label></div>
+        <div class="part-h"><span><span class="op-tag hidden" id="tag-mat">OPCIÓN A</span>HOJA 1 · COTIZACIÓN DE MATERIALES</span> <label class="sw"><input type="checkbox" id="inc-mat" checked> Incluir</label></div>
         <div class="part-b">
+          <div class="op-tit hidden" id="box-tit-matA"><label>Título de la opción A (opcional)</label><input type="text" id="tit-matA" class="in" maxlength="60" placeholder="Ej. Tubería PVC · si lo dejas vacío se usa el primer renglón"></div>
           <div class="thead"><span>#</span><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Total</span><span></span></div>
           <div class="rows" id="rows-mat"></div>
           <button class="b-ghost b-sm" style="margin-top:10px" data-add="mat">+ Agregar fila</button>
@@ -416,10 +426,30 @@
       </div>
     </div>
 
+    <div class="card opb-bar">
+      <h3>Opción B</h3>
+      <label class="chk"><input type="checkbox" id="opb-mat-no" checked> Sin opción B de materiales</label>
+      <div class="hint" style="margin-top:2px">Quítalo para cotizar otra alternativa de materiales: se abre una copia de la hoja de arriba para cambiar solo lo distinto.</div>
+    </div>
+    <div class="card opb-card hidden" id="card-matB">
+      <div class="part" id="part-matB">
+        <div class="part-h"><span><span class="op-tag">OPCIÓN B</span>HOJA 1 · COTIZACIÓN DE MATERIALES</span> <label class="sw"><input type="checkbox" id="inc-matB" checked> Incluir</label></div>
+        <div class="part-b">
+          <div class="op-tit"><label>Título de la opción B (opcional)</label><input type="text" id="tit-matB" class="in" maxlength="60" placeholder="Ej. Tubería de cobre · si lo dejas vacío se usa el primer renglón"></div>
+          <div class="thead"><span>#</span><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Total</span><span></span></div>
+          <div class="rows" id="rows-matB"></div>
+          <button class="b-ghost b-sm" style="margin-top:10px" data-add="matB">+ Agregar fila</button>
+          <div class="sum"><div><span>SUB-TOTAL</span><b id="matB-sub">$0.00</b></div><div><span>ITBMS (7%)</span><b id="matB-itbms">$0.00</b></div><div class="big"><span>TOTAL MATERIALES</span><b id="matB-total">$0.00</b></div></div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:8px">Lo que escribas en la Opción B queda guardado aunque quites «Incluir»: solo decide si se imprime.</div>
+    </div>
+
     <div class="card">
       <div class="part" id="part-mo">
-        <div class="part-h">HOJA 2 · COTIZACIÓN DE MANO DE OBRA <label class="sw"><input type="checkbox" id="inc-mo" checked> Incluir</label></div>
+        <div class="part-h"><span><span class="op-tag hidden" id="tag-mo">OPCIÓN A</span>HOJA 2 · COTIZACIÓN DE MANO DE OBRA</span> <label class="sw"><input type="checkbox" id="inc-mo" checked> Incluir</label></div>
         <div class="part-b">
+          <div class="op-tit hidden" id="box-tit-moA"><label>Título de la opción A (opcional)</label><input type="text" id="tit-moA" class="in" maxlength="60" placeholder="Ej. Instalación con PVC · si lo dejas vacío se usa el primer renglón"></div>
           <div class="thead"><span>#</span><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Total</span><span></span></div>
           <div class="rows" id="rows-mo"></div>
           <button class="b-ghost b-sm" style="margin-top:10px" data-add="mo">+ Agregar fila</button>
@@ -431,7 +461,28 @@
       </div>
     </div>
 
-    <div class="grand"><span>TOTAL DE LA COTIZACIÓN</span><b id="g-total">$0.00</b></div>
+    <div class="card opb-bar">
+      <h3>Opción B</h3>
+      <label class="chk"><input type="checkbox" id="opb-mo-no" checked> Sin opción B de mano de obra</label>
+      <div class="hint" style="margin-top:2px">Quítalo para cotizar otra alternativa de mano de obra. Si no la abres, esta mano de obra vale para las dos opciones.</div>
+    </div>
+    <div class="card opb-card hidden" id="card-moB">
+      <div class="part" id="part-moB">
+        <div class="part-h"><span><span class="op-tag">OPCIÓN B</span>HOJA 2 · COTIZACIÓN DE MANO DE OBRA</span> <label class="sw"><input type="checkbox" id="inc-moB" checked> Incluir</label></div>
+        <div class="part-b">
+          <div class="op-tit"><label>Título de la opción B (opcional)</label><input type="text" id="tit-moB" class="in" maxlength="60" placeholder="Ej. Instalación con cobre · si lo dejas vacío se usa el primer renglón"></div>
+          <div class="thead"><span>#</span><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Total</span><span></span></div>
+          <div class="rows" id="rows-moB"></div>
+          <button class="b-ghost b-sm" style="margin-top:10px" data-add="moB">+ Agregar fila</button>
+          <div class="grid g2" style="margin-top:14px">
+            <div><label>Tiempo de intervención · Duración estimada</label><input type="text" id="f-durB" class="in" value="3 - 5 horas"></div>
+          </div>
+          <div class="sum"><div class="big"><span>SUB-TOTAL MANO DE OBRA</span><b id="moB-sub">$0.00</b></div></div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:8px">Lo que escribas en la Opción B queda guardado aunque quites «Incluir»: solo decide si se imprime.</div>
+    </div>
+    <div class="grand"><span id="g-lbl">TOTAL DE LA COTIZACIÓN</span><b id="g-total">$0.00</b><div class="alt-res hidden" id="g-ops"></div></div>
 
     <div class="card gasto-card">
       <h2>Control de gasto <span class="pill p-blue" style="font-size:11px">Operación interna</span></h2>
@@ -831,7 +882,10 @@ const PDFCOT = (() => {
     T(doc, "Grupo Σ LEAN — Ingeniería & Proyectos", 112.8, 198.5);
     T(doc, "VÁLIDO HASTA:", 392.8, 198.5, {st:"bold", c:C.navy});
     T(doc, fechaLarga(d.validoHasta), 460.8, 198.5);
-    T(doc, "DETALLE DE SERVICIOS", 54.4, 217.9, {st:"bold", sz:8.8, c:C.navy});
+    T(doc, d._resTit || "DETALLE DE SERVICIOS", 54.4, 217.9, {st:"bold", sz:8.8, c:C.navy});
+    if(d._op){ const t = d._op.etq, w = W(doc, t, "bold", 8) + 12, x0 = 54.4 + W(doc, "DETALLE DE SERVICIOS", "bold", 8.8) + 8;   // opción A / B de la hoja
+      doc.setFillColor(...(d._op.comun ? [91,104,120] : C.orange)); doc.roundedRect(x0, 215.4, w, 11, 2.5, 2.5, "F"); T(doc, t, x0 + 6, 217.2, {st:"bold", sz:8, c:C.white});
+      if(d._op.titulo){ doc.setFont("LS","bold"); doc.setFontSize(8.8); T(doc, doc.splitTextToSize(d._op.titulo, 330 - w)[0], x0 + w + 6, 217.9, {st:"bold", sz:8.8, c:C.navy}); } }
     return tableHeader(doc, 227.2);
   }
   function tableHeader(doc, y){
@@ -906,7 +960,7 @@ const PDFCOT = (() => {
   function hojaMateriales(doc, A, d){
     const tit = "COTIZACIÓN DE MATERIALES";
     let y = header(doc, A, d, tit);
-    y = rowsBlock(doc, A, d, tit, d.materiales, false, y);
+    y = rowsBlock(doc, A, d, tit, d.materiales, false, y, d._base || 1);
     R(doc, 52, y, 507.2, 34.4, C.navy);
     [["SUB-TOTAL:", d.tot.matSub],["ITBMS (7%):", d.tot.matItbms],["TOTAL:", d.tot.matTotal]].forEach(([l,v],k) => {
       T(doc, l, 457.1, y + 2.5 + k*11.2, {st:"bold", c:C.white, al:"right"});
@@ -918,7 +972,7 @@ const PDFCOT = (() => {
   function hojaManoObra(doc, A, d){
     const tit = "COTIZACIÓN DE MANO DE OBRA";
     let y = header(doc, A, d, tit);
-    y = rowsBlock(doc, A, d, tit, d.manoObra, true, y, 101);
+    y = rowsBlock(doc, A, d, tit, d.manoObra, true, y, d._base || 101);
     R(doc, 52, y, 507.2, 23.2, C.navy);
     T(doc, "SUB-TOTAL:", 457.1, y + 8.1, {st:"bold", c:C.white, al:"right"});
     T(doc, money(d.tot.moSub), CENT[4], y + 8.3, {st:"bold", sz:8.8, c:C.white, al:"center"});
@@ -941,9 +995,55 @@ const PDFCOT = (() => {
     footer(doc, A);
   }
 
+  /* ===== cotización con opción B: hoja de resumen + hojas de cada opción ===== */
+  const opAct = (d, k) => !!(d.alt?.[k]?.on && d.alt[k].inc && (k==="mat" ? d.incMat : d.incMO));
+  const linea1 = its => String(its?.[0]?.desc||"").split("\n")[0].trim().slice(0, 60);
+  function titOp(d, k, L){ const a = d.alt?.[k]; return a?.["tit"+L] || linea1(L==="A" ? (k==="mat" ? d.materiales : d.manoObra) : a?.items) || "Opción " + L; }
+  function titTotal(d, L){ const k = opAct(d,"mat") ? "mat" : "mo", o = opAct(d,"mat") && opAct(d,"mo") ? "mo" : null;
+    return d.alt?.mat?.["tit"+L] || d.alt?.mo?.["tit"+L] || titOp(d, k, L); }
+  function hojaResumen(doc, A, d){
+    let y = header(doc, A, {...d, _resTit:"RESUMEN DE OPCIONES"}, "RESUMEN DE COTIZACIÓN") - 23.2;
+    const tag = (L, x, yy) => { const w = L.length > 1 ? 34 : 26; doc.setFillColor(...(L.length > 1 ? [91,104,120] : C.orange)); doc.roundedRect(x, yy, w, 12, 2.5, 2.5, "F"); T(doc, L, x + w/2, yy + 1.8, {st:"bold", sz:8.5, c:C.white, al:"center"}); };
+    const tabla = (titulo, cols, filas) => {
+      R(doc, 52, y, 507.2, 21, C.label); T(doc, titulo, 54.4, y + 7, {st:"bold", sz:8.8, c:C.navy}); y += 21;
+      R(doc, 52, y, 507.2, 20, C.navy); cols.forEach(([h, x, al]) => T(doc, h, x, y + 6.5, {st:"bold", c:C.white, al})); y += 20;
+      filas.forEach(f => { const h = 24; tag(f.letra, 58, y + 6); doc.setFont("LS","bold"); doc.setFontSize(8); T(doc, doc.splitTextToSize(f.titulo, cols[2][1] - 60 - 100)[0], 100, y + 7.5, {st:"bold"});
+        f.vals.forEach((v, i) => T(doc, v, cols[i + 2][1], y + 7.5, {al:cols[i + 2][2], ...(i === f.vals.length - 1 ? {st:"bold", c:C.navy} : {})}));
+        hline(doc, y + h - 0.8, C.orange); vline(doc, 52, y, y + h, C.border); vline(doc, 558.4, y, y + h, C.border); y += h; });
+      y += 14; };
+    const b = d.opB.tot, n = [1];
+    if(d.incMat) tabla(`${n[0]++} · COTIZACIÓN DE MATERIALES`, [["Opción",74,"center"],["Descripción",100,"left"],["Sub-total",370,"center"],["ITBMS (7%)",440,"center"],["Total",508.7,"center"]],
+      opAct(d,"mat") ? [{letra:"A", titulo:titOp(d,"mat","A"), vals:[money(d.tot.matSub), money(d.tot.matItbms), money(d.tot.matTotal)]}, {letra:"B", titulo:titOp(d,"mat","B"), vals:[money(b.matSub), money(b.matItbms), money(b.matTotal)]}]
+                     : [{letra:"A y B", titulo:"Aplica a ambas opciones", vals:[money(d.tot.matSub), money(d.tot.matItbms), money(d.tot.matTotal)]}]);
+    if(d.incMO) tabla(`${n[0]++} · COTIZACIÓN DE MANO DE OBRA`, [["Opción",74,"center"],["Descripción",100,"left"],["Duración",400,"center"],["Sub-total",508.7,"center"]],
+      opAct(d,"mo") ? [{letra:"A", titulo:titOp(d,"mo","A"), vals:[d.duracion||"", money(d.tot.moSub)]}, {letra:"B", titulo:titOp(d,"mo","B"), vals:[d.alt.mo.duracion||d.duracion||"", money(b.moSub)]}]
+                    : [{letra:"A y B", titulo:"Aplica a ambas opciones", vals:[d.duracion||"", money(d.tot.moSub)]}]);
+    y += 34; hline(doc, y - 17, C.border);
+    R(doc, 52, y, 507.2, 21, C.navy); T(doc, "TOTAL POR OPCIÓN · ELIJA UNA", 54.4, y + 7, {st:"bold", sz:8.8, c:C.white}); y += 21;
+    const partes = [d.incMat ? "materiales" : "", d.incMO ? "mano de obra" : ""].filter(Boolean).join(" + ");
+    [["A", d.totA ?? d.total], ["B", d.opB.total]].forEach(([L, tot]) => { const h = 26; tag(L, 58, y + 7);
+      doc.setFont("LS","normal"); doc.setFontSize(8); T(doc, doc.splitTextToSize(`${titTotal(d, L)}  ·  ${partes}`, 330)[0], 100, y + 8.5);
+      if(d.aprobada===L){ doc.setFillColor(21,128,61); doc.roundedRect(400, y + 7, 52, 12, 2.5, 2.5, "F"); T(doc, "APROBADA", 426, y + 8.8, {st:"bold", sz:7, c:C.white, al:"center"}); }
+      T(doc, money(tot), 508.7, y + 7.8, {st:"bold", sz:10.5, c:C.navy, al:"center"});
+      hline(doc, y + h - 0.8, C.border); vline(doc, 52, y, y + h, C.border); vline(doc, 558.4, y, y + h, C.border); y += h; });
+    doc.setFont("LS","italic"); doc.setFontSize(7.2);
+    doc.splitTextToSize("Esta cotización presenta 2 opciones para el mismo trabajo. Se paga solo la opción elegida. El detalle de cada opción está en las hojas siguientes.", 503)
+      .forEach((ln, k) => T(doc, ln, 53.6, y + 6 + k * 9, {st:"italic", sz:7.2, c:C.gray}));
+    footer(doc, A);
+  }
+  function buildOpciones(A, d){
+    const doc = make(A); hojaResumen(doc, A, d);
+    const com = {etq:"OPCIONES A Y B", comun:true, titulo:"Aplica a ambas opciones"};
+    if(d.incMat){ doc.addPage(); hojaMateriales(doc, A, {...d, _op: opAct(d,"mat") ? {etq:"OPCIÓN A", titulo:titOp(d,"mat","A")} : com});
+      if(opAct(d,"mat")){ doc.addPage(); hojaMateriales(doc, A, {...d, materiales:d.alt.mat.items, tot:{...d.tot, matSub:d.opB.tot.matSub, matItbms:d.opB.tot.matItbms, matTotal:d.opB.tot.matTotal}, _base:201, _op:{etq:"OPCIÓN B", titulo:titOp(d,"mat","B")}}); } }
+    if(d.incMO){ doc.addPage(); hojaManoObra(doc, A, {...d, _op: opAct(d,"mo") ? {etq:"OPCIÓN A", titulo:titOp(d,"mo","A")} : com});
+      if(opAct(d,"mo")){ doc.addPage(); hojaManoObra(doc, A, {...d, manoObra:d.alt.mo.items, duracion:d.alt.mo.duracion || d.duracion, tot:{...d.tot, moSub:d.opB.tot.moSub}, _base:301, _op:{etq:"OPCIÓN B", titulo:titOp(d,"mo","B")}}); } }
+    return doc;
+  }
   /* d = { numero, cliente, ruc, fecha, validoHasta, url, materiales:[{desc,cant,precio}], manoObra:[...],
           incMat, incMO, duracion, tot:{matSub, matItbms, matTotal, moSub} } */
   function build(A, d){
+    if((opAct(d,"mat") || opAct(d,"mo")) && d.opB){ const doc = buildOpciones(A, d); doc.setProperties({title:`Cotización ${d.numero} · Grupo LEAN`, subject:d.cliente, author:"Grupo Σ LEAN — Ingeniería & Proyectos", creator:"Cotizador Grupo LEAN"}); return doc; }
     const doc = make(A);
     doc.setProperties({title:`Cotización ${d.numero} · Grupo LEAN`, subject:d.cliente, author:"Grupo Σ LEAN — Ingeniería & Proyectos", creator:"Cotizador Grupo LEAN"});
     let first = true;
@@ -1400,7 +1500,7 @@ function nActual(){ return EDIT ? EDIT.n : siguienteN(); }
 function rowHTML(kind, it={}){
   const div = document.createElement("div"); div.className = "row";
   div.innerHTML = `<div class="n"></div>
-    <div class="d"><span class="lbl">Descripción</span><textarea class="in f-desc" rows="${kind==="mo"?3:1}" placeholder="${kind==="mo"?"Título del trabajo\n- detalle 1\n- detalle 2":"Descripción del material"}">${esc(it.desc||"")}</textarea></div>
+    <div class="d"><span class="lbl">Descripción</span><textarea class="in f-desc" rows="${kind.startsWith("mo")?3:1}" placeholder="${kind.startsWith("mo")?"Título del trabajo\n- detalle 1\n- detalle 2":"Descripción del material"}">${esc(it.desc||"")}</textarea></div>
     <div><span class="lbl">Cant.</span><input type="number" inputmode="decimal" class="in f-cant" step="any" min="0" value="${it.cant??""}"></div>
     <div><span class="lbl">Precio unit.</span><input type="number" inputmode="decimal" class="in f-precio" step="any" min="0" value="${it.precio??""}"></div>
     <div class="tot"></div>
@@ -1427,7 +1527,7 @@ function totales(mat, mo, incMat, incMO){
   return {matSub, matItbms, matTotal, moSub, general: r2(r2(matTotal) + r2(moSub))};
 }
 function calc(){
-  ["mat","mo"].forEach(k => [...$(`rows-${k}`).children].forEach((r,i) => {
+  ["mat","mo","matB","moB"].forEach(k => [...$(`rows-${k}`).children].forEach((r,i) => {
     r.querySelector(".n").textContent = i+1;
     const c = Number(r.querySelector(".f-cant").value||0), p = Number(r.querySelector(".f-precio").value||0);
     r.querySelector(".tot").textContent = (r.querySelector(".f-cant").value!=="" && r.querySelector(".f-precio").value!=="") ? money(c*p) : "—";
@@ -1437,7 +1537,52 @@ function calc(){
   const t = totales(leerItems("mat"), leerItems("mo"), incMat, incMO);
   $("mat-sub").textContent = money(t.matSub); $("mat-itbms").textContent = money(t.matItbms); $("mat-total").textContent = money(t.matTotal);
   $("mo-sub").textContent = money(t.moSub); $("g-total").textContent = money(t.general);
+  // opción B
+  const opMat = opbAbierta("mat"), opMo = opbAbierta("mo");
+  $("card-matB").classList.toggle("hidden", !opMat); $("card-moB").classList.toggle("hidden", !opMo);
+  $("part-matB").classList.toggle("off", !$("inc-matB").checked); $("part-moB").classList.toggle("off", !$("inc-moB").checked);
+  const tb = totales(leerItems("matB"), leerItems("moB"), true, true);
+  $("matB-sub").textContent = money(tb.matSub); $("matB-itbms").textContent = money(tb.matItbms); $("matB-total").textContent = money(tb.matTotal); $("moB-sub").textContent = money(tb.moSub);
+  const actMat = opMat && $("inc-matB").checked && incMat, actMo = opMo && $("inc-moB").checked && incMO, hay = actMat || actMo;
+  $("tag-mat").classList.toggle("hidden", !hay); $("tag-mo").classList.toggle("hidden", !hay);
+  $("tag-mat").textContent = hay && !actMat ? "A y B" : "OPCIÓN A"; $("tag-mo").textContent = hay && !actMo ? "A y B" : "OPCIÓN A";
+  $("tag-mat").classList.toggle("com", hay && !actMat); $("tag-mo").classList.toggle("com", hay && !actMo);
+  $("box-tit-matA").classList.toggle("hidden", !actMat); $("box-tit-moA").classList.toggle("hidden", !actMo);
+  $("g-lbl").textContent = hay ? "TOTAL POR OPCIÓN" : "TOTAL DE LA COTIZACIÓN"; $("g-total").classList.toggle("hidden", hay); $("g-ops").classList.toggle("hidden", !hay);
+  if(hay){ const tB = r2(r2(incMat ? (actMat ? tb.matTotal : t.matTotal) : 0) + r2(incMO ? (actMo ? tb.moSub : t.moSub) : 0));
+    const pl = k => String(leerItems(k)[0]?.desc||"").split("\n")[0].trim().slice(0, 60);
+    const tit = L => $(`tit-mat${L}`).value.trim() || $(`tit-mo${L}`).value.trim() || (L==="A" ? pl(incMat ? "mat" : "mo") : pl(actMat ? "matB" : "moB")) || "Opción " + L;
+    $("g-ops").innerHTML = `<div><span>A · ${esc(tit("A"))}</span><b>${money(t.general)}</b></div><div><span>B · ${esc(tit("B"))}</span><b>${money(tB)}</b></div>`; }
   numHint();
+}
+const opbAbierta = k => !$(`opb-${k}-no`).checked;
+// abrir / cerrar la opción B de una hoja (al abrirla se copia la hoja A para cambiar solo lo distinto)
+["mat","mo"].forEach(k => $(`opb-${k}-no`).addEventListener("change", e => {
+  const ch = e.target, rowsB = $(`rows-${k}B`);
+  if(!ch.checked){
+    if(!leerItems(k+"B").length){ rowsB.innerHTML = ""; const its = leerItems(k).map(({fotos, docs, ...x}) => x); (its.length ? its : [{}]).forEach(it => addRow(k+"B", it));
+      if(k==="mo") $("f-durB").value = $("f-dur").value; }
+    calc(); return;
+  }
+  if(!leerItems(k+"B").length || !e.isTrusted){ rowsB.innerHTML = ""; addRow(k+"B"); calc(); return; }
+  ch.checked = false;   // hay datos en la B: confirmar antes de borrarlos
+  const {caja, cerrar} = modal(`<h2 style="margin-bottom:6px">Quitar la opción B</h2><p class="hint" style="margin-bottom:12px">La opción B de ${k==="mat" ? "materiales" : "mano de obra"} tiene datos. ¿Los borro? Si solo quieres que no se imprima, quita «Incluir» en su hoja (así queda guardada).</p>
+    <div class="actions"><button class="b-ghost" data-cerrar>No, dejarla</button><button class="b-red" id="opb-del">Sí, borrar la opción B</button></div>`);
+  $("opb-del").onclick = () => { cerrar(); ch.checked = true; rowsB.innerHTML = ""; addRow(k+"B"); $(`tit-${k}B`).value = ""; $(`tit-${k}A`).value = ""; calc(); };
+}));
+["inc-matB","inc-moB"].forEach(id => $(id).addEventListener("change", calc));
+["tit-matA","tit-matB","tit-moA","tit-moB"].forEach(id => $(id).addEventListener("input", calc));
+// opciones de una cotización guardada
+const opAct = (c, k) => !!(c?.alt?.[k]?.on && c.alt[k].inc && (k==="mat" ? c.incMat : c.incMO));
+const tieneOpc = c => opAct(c, "mat") || opAct(c, "mo");
+const primeraLinea = its => String(its?.[0]?.desc||"").split("\n")[0].trim().slice(0, 60);
+function titOpc(c, L){ const a = c.alt || {}; return a.mat?.["tit"+L] || a.mo?.["tit"+L] || (L==="A" ? primeraLinea(c.incMat ? c.materiales : c.manoObra) : primeraLinea(opAct(c,"mat") ? a.mat.items : a.mo?.items)) || "Opción " + L; }
+function conOpcion(c){   // la cotización tal como quedó con la opción aprobada (para recibos y montos)
+  if(!c || !tieneOpc(c) || c.aprobada!=="B") return c;
+  const o = {...c, tot:{...c.tot}};
+  if(opAct(c,"mat")){ o.materiales = c.alt.mat.items; o.tot.matSub = c.opB.tot.matSub; o.tot.matItbms = c.opB.tot.matItbms; o.tot.matTotal = c.opB.tot.matTotal; }
+  if(opAct(c,"mo")){ o.manoObra = c.alt.mo.items; o.tot.moSub = c.opB.tot.moSub; o.duracion = c.alt.mo.duracion || c.duracion; }
+  return o;
 }
 ["inc-mat","inc-mo"].forEach(id => $(id).onchange = calc);
 $("f-cliente").addEventListener("input", numHint);
@@ -1466,8 +1611,16 @@ function nueva(){
   ["f-cliente","f-ruc","f-email"].forEach(id => $(id).value=""); $("f-dur").value = "3 - 5 horas";
   $("inc-mat").checked = true; $("inc-mo").checked = true;
   $("rows-mat").innerHTML=""; $("rows-mo").innerHTML=""; addRow("mat"); addRow("mo");
+  ponerOpB(null);
   $("f-fecha-opt").classList.add("hidden"); $("f-hoy").checked=false;
   $("emit-status").textContent=""; $("emit-msg").innerHTML=""; fechas(); calc(); gastoPintar("f-g", null); repPintar(null);
+}
+function ponerOpB(c, modo){   // llena (o limpia) las hojas de la opción B
+  ["mat","mo"].forEach(k => { const a = c?.alt?.[k];
+    $(`opb-${k}-no`).checked = !a?.on; $(`inc-${k}B`).checked = a ? a.inc!==false : true; $(`tit-${k}A`).value = a?.titA || ""; $(`tit-${k}B`).value = a?.titB || "";
+    $(`rows-${k}B`).innerHTML = ""; const its = a?.items?.length ? a.items : [{}];
+    its.forEach(it => { addRow(k+"B", modo==="duplicar" ? (({fotos, docs, ...x}) => x)(it) : it); if(modo==="editar") ponerAnexos($(`rows-${k}B`).lastChild, it, c.codigo); }); });
+  $("f-durB").value = c?.alt?.mo?.duracion || "3 - 5 horas"; calc();
 }
 function cargar(c, modo){   // modo: "editar" | "duplicar"
   EDIT = modo==="editar" ? c : null;
@@ -1476,6 +1629,7 @@ function cargar(c, modo){   // modo: "editar" | "duplicar"
   $("rows-mat").innerHTML=""; $("rows-mo").innerHTML="";
   (c.materiales.length ? c.materiales : [{}]).forEach(it => { addRow("mat", it); if(modo==="editar") ponerAnexos($("rows-mat").lastChild, it, c.codigo); });
   (c.manoObra.length ? c.manoObra : [{}]).forEach(it => { addRow("mo", it); if(modo==="editar") ponerAnexos($("rows-mo").lastChild, it, c.codigo); });
+  ponerOpB(c, modo);
   $("f-fecha-opt").classList.toggle("hidden", modo!=="editar"); $("f-hoy").checked=false;
   $("form-title").firstChild.textContent = modo==="editar" ? "Corregir cotización " : "Nueva cotización (copia) ";
   $("form-badge").textContent = modo==="editar" ? c.numero : "copia de " + c.numero;
@@ -1496,6 +1650,9 @@ function armar(){   // valida y arma el registro
     if(!arr.length) errs.push(`al menos una fila en ${nom}`);
     arr.forEach((it,i) => { if(!it.desc || it.cant==null || it.precio==null) errs.push(`completar la fila ${i+1} de ${nom} (descripción, cantidad y precio)`); });
   });
+  const matB = leerItems("matB"), moB = leerItems("moB"), onMat = opbAbierta("mat") && matB.length > 0, onMo = opbAbierta("mo") && moB.length > 0;
+  const actMat = onMat && $("inc-matB").checked && incMat, actMo = onMo && $("inc-moB").checked && incMO;
+  [[actMat,matB,"materiales (opción B)"],[actMo,moB,"mano de obra (opción B)"]].forEach(([act,arr,nom]) => { if(act) arr.forEach((it,i) => { if(!it.desc || it.cant==null || it.precio==null) errs.push(`completar la fila ${i+1} de ${nom} (descripción, cantidad y precio)`); }); });
   const dup = (HIST.cotizaciones||[]).find(c => c.n===n && (!EDIT || c.codigo!==EDIT.codigo));
   if(dup) errs.push(`actualizar: el número ${pad3(n)} ya existe (${dup.numero}). Recarga la página`);
   if(errs.length) throw new Error("Falta " + errs.join(", ") + ".");
@@ -1506,9 +1663,18 @@ function armar(){   // valida y arma el registro
   return { ...guardaEstado(EDIT, ["cxc","cxcAnulada","origen"]), ...(gasto ? {gasto} : {}), ...(reporte ? {reporte} : {}), numero, letra:L.toUpperCase(), n, codigo, cliente, ruc:$("f-ruc").value.trim(), email:normEmails($("f-email").value), fecha, validoHasta:masDias(fecha,30),
            incMat, incMO, materiales: incMat?mat:[], manoObra: incMO?mo:[], duracion:$("f-dur").value.trim(),
            tot:{matSub:tot.matSub, matItbms:tot.matItbms, matTotal:tot.matTotal, moSub:tot.moSub}, total: tot.general,
+           ...((onMat || onMo) ? (() => {   // opción B: queda guardada aunque no se imprima («Incluir» decide)
+             const alt = {...(onMat ? {mat:{on:true, inc:$("inc-matB").checked, titA:$("tit-matA").value.trim(), titB:$("tit-matB").value.trim(), items:matB}} : {}),
+                          ...(onMo ? {mo:{on:true, inc:$("inc-moB").checked, titA:$("tit-moA").value.trim(), titB:$("tit-moB").value.trim(), items:moB, duracion:$("f-durB").value.trim()}} : {})};
+             if(!(actMat || actMo)) return {alt};
+             const tb = totales(matB, moB, true, true), tB = r2(r2(incMat ? (actMat ? tb.matTotal : tot.matTotal) : 0) + r2(incMO ? (actMo ? tb.moSub : tot.moSub) : 0));
+             const opB = {tot:{matSub: actMat ? tb.matSub : tot.matSub, matItbms: actMat ? tb.matItbms : tot.matItbms, matTotal: actMat ? tb.matTotal : tot.matTotal, moSub: actMo ? tb.moSub : tot.moSub}, total:tB};
+             const aprob = EDIT?.aprobada && EDIT?.opB ? EDIT.aprobada : null;
+             return {alt, opB, totA: tot.general, ...(aprob ? {aprobada:aprob} : {}), total: aprob==="B" ? tB : aprob==="A" ? tot.general : Math.min(tot.general, tB)}; })() : {}),
            creado: EDIT ? EDIT.creado : new Date().toISOString(), actualizado: new Date().toISOString() };
 }
 const urlDe = c => CFG.site + "?c=" + c.codigo;
+const opcPortal = c => tieneOpc(c) ? {opciones:[{letra:"A", titulo:titOpc(c,"A"), total:r2(c.totA ?? c.total)}, {letra:"B", titulo:titOpc(c,"B"), total:r2(c.opB.total)}], ...(c.aprobada ? {aprobada:c.aprobada} : {})} : {};
 const pdfDe = c => PDFCOT.build(ASSETS, {...c, url: urlDe(c)});
 function abrirPDF(doc, nombre){
   const url = URL.createObjectURL(new Blob([doc.output("arraybuffer")], {type:"application/pdf"}));
@@ -1530,7 +1696,7 @@ $("btn-emit").onclick = async () => {
   let c; try{ c = armar(); }catch(e){ st.className="status bad"; st.textContent = e.message; return; }
   $("btn-emit").disabled = true;
   try{
-    st.className="status"; await subirFotos(c.codigo, st, [...(c.reporte ? [REPDIV] : []), ...(c.incMat ? $("rows-mat").children : []), ...(c.incMO ? $("rows-mo").children : [])]);
+    st.className="status"; await subirFotos(c.codigo, st, [...(c.reporte ? [REPDIV] : []), ...(c.incMat ? $("rows-mat").children : []), ...(c.incMO ? $("rows-mo").children : []), ...(c.alt?.mat ? $("rows-matB").children : []), ...(c.alt?.mo ? $("rows-moB").children : [])]);
     st.textContent = tieneRep(c) ? "Uniendo el reporte y generando el PDF…" : "Generando PDF…";
     const pdf = await bytesCot(c);
     st.textContent="Publicando en el portal de validación…";
@@ -1541,7 +1707,7 @@ $("btn-emit").onclick = async () => {
     const ep = await cifrar(k.key, pdf); const bin = new Uint8Array(12+ep.ct.length); bin.set(ep.iv,0); bin.set(ep.ct,12);
     await ghPut(CFG.repoVal, pp, bin, shaP, `Publicar PDF · Cotización ${c.numero}`);
     const portal = { tipo:"Cotización", numero:c.numero, cliente:c.cliente, ruc:c.ruc||undefined, fecha:c.fecha, validoHasta:c.validoHasta,
-      desglose:[...(c.incMat?[["Materiales (con ITBMS)", r2(c.tot.matTotal)]]:[]), ...(c.incMO?[["Mano de obra", r2(c.tot.moSub)]]:[])], total:c.total, pdf:true, ...anexosCotPortal(c), ...(c.reporte ? {reporte: c.reporte.docs} : {}) };
+      desglose:[...(c.incMat?[["Materiales (con ITBMS)", r2(c.tot.matTotal)]]:[]), ...(c.incMO?[["Mano de obra", r2(c.tot.moSub)]]:[])], total:c.total, pdf:true, ...opcPortal(c), ...anexosCotPortal(c), ...(c.reporte ? {reporte: c.reporte.docs} : {}) };
     const ej = await cifrar(k.key, te.encode(JSON.stringify(portal)));
     await ghPut(CFG.repoVal, pj, te.encode(JSON.stringify({iv:b64(ej.iv), ct:b64(ej.ct)})), shaJ, `Publicar datos · Cotización ${c.numero}`);
     st.textContent="Guardando en el historial…";
@@ -2024,13 +2190,14 @@ function pintarHist(){
     <td><button class="num-link${c.anulado?" anul":""}" data-a="ver" data-c="${esc(c.codigo)}" title="Ver la cotización (PDF)">${esc(c.numero)}</button></td>
     <td>${esc(fechaLarga(c.fecha))}</td>
     <td>${esc(c.cliente)}${c.ruc?`<div class="hint">${esc(c.ruc)}</div>`:""}</td>
-    <td class="r"><b>${money(c.total)}</b></td>
+    <td class="r"><b>${money(c.total)}</b>${tieneOpc(c) ? `<div class="hint">${c.aprobada ? `Opción ${c.aprobada} aprobada` : `A ${money(c.totA ?? c.total)} · B ${money(c.opB.total)}`}</div>` : ""}</td>
     <td>${(e => `<span class="pill ${e.cls}">${e.t}</span>`)(estadoCot(c))}${c.anulado ? `<div class="hint">${esc(PDFFAC.dmy(c.anulado.fecha))}${c.anulado.motivo ? " · " + esc(c.anulado.motivo) : ""}</div>` : ""}${c.publicado===false ? ' <span class="pill p-bad" title="Este código aún no está en el portal">No publicada</span>' : ''}${c.origen==="excel" ? '<div class="hint">De Excel</div>' : ''}${c.cxc && !c.anulado ? '<div style="margin-top:3px"><span class="pill p-blue" style="padding:1px 8px;font-size:11px" title="Está en Cuentas por cobrar">En cobro</span></div>' : ''}</td>
     <td class="acts-td"><div class="acts">
       <button class="b-navy b-sm" data-a="pdf" data-c="${esc(c.codigo)}" title="Descargar PDF">Descargar</button>
       ${menuHTML([
         c.anulado || c.resumen ? "" : `<button class="mi" data-a="facturar" data-c="${esc(c.codigo)}">🧾 Facturar esta cotización</button>`,
         `<button class="mi" data-a="share" data-c="${esc(c.codigo)}">📤 Compartir PDF</button>`,
+        tieneOpc(c) && !c.anulado ? `<button class="mi" data-a="aprobar" data-c="${esc(c.codigo)}">✅ Opción aprobada${c.aprobada ? ` (${c.aprobada})` : "…"}</button>` : "",
         c.resumen || c.anulado || c.pdfOriginal ? "" : `<button class="mi" data-a="edit" data-c="${esc(c.codigo)}">✏️ Corregir</button>`,
         c.publicado===false ? "" : `<a class="mi" href="${urlDe(c)}" target="_blank" rel="noopener">🌐 Ver en el portal</a>`,
         !c.anulado && !c.cxc && !c.resumen ? `<button class="mi" data-a="cxc" data-c="${esc(c.codigo)}">💲 Enviar a cuentas por cobrar</button>` : "",
@@ -2060,7 +2227,27 @@ function pintarHist(){
     if(b.dataset.a==="anular" || b.dataset.a==="react") return pedirAnular("cot", c, b.dataset.a==="anular");
     if(b.dataset.a==="cxc") return pedirCxc("cot", c);
     if(b.dataset.a==="facturar") return pedirFacturar(c);
+    if(b.dataset.a==="aprobar") return pedirAprobar(c);
     if(b.dataset.a==="dup") cargar(c, "duplicar");
+  });
+}
+function pedirAprobar(c){   // el cliente eligió una opción: esa es la que vale para montos, cobro y recibos
+  const tA = c.totA ?? c.total, tB = c.opB.total;
+  const {caja, cerrar} = modal(`<h2 style="margin-bottom:6px">✅ Opción aprobada · ${esc(c.numero)}</h2><p class="hint" style="margin-bottom:12px">¿Cuál eligió <b>${esc(c.cliente)}</b>? Esa opción es la que cuenta en reportes y cuentas por cobrar, y la que se trae al hacer el recibo.</p>
+    <div class="fx-op"><button class="fx-op-b${c.aprobada==="A" ? " on" : ""}" data-op="A"><span class="op-tag">A</span><b>${esc(titOpc(c,"A"))}</b><small>${money(tA)}</small></button>
+    <button class="fx-op-b${c.aprobada==="B" ? " on" : ""}" data-op="B"><span class="op-tag">B</span><b>${esc(titOpc(c,"B"))}</b><small>${money(tB)}</small></button></div>
+    <div class="status" id="ap-st"></div>
+    <div class="actions" style="margin-top:12px">${c.aprobada ? '<button class="b-ghost" data-op="">Quitar la aprobación</button>' : ""}<button class="b-ghost" data-cerrar>Cancelar</button></div>`);
+  caja.querySelectorAll("[data-op]").forEach(b => b.onclick = async () => { const op = b.dataset.op, st = $("ap-st"); st.className = "status"; st.textContent = "Guardando…";
+    caja.querySelectorAll("button").forEach(x => x.disabled = true);
+    try{
+      const tot = op==="B" ? tB : op==="A" ? tA : Math.min(tA, tB);
+      for(let i=0;i<3;i++){ try{ await recargarHist(); const x = HIST.cotizaciones.find(y => y.codigo===c.codigo); if(!x) throw new Error("no encontré la cotización");
+          if(op) x.aprobada = op; else delete x.aprobada; x.total = tot; await guardarHist(op ? `Cotización ${c.numero}: opción ${op} aprobada` : `Cotización ${c.numero}: sin opción aprobada`); break; }
+        catch(e){ if(e.status!==409 || i===2) throw e; } }
+      try{ await portalPatch(c.codigo, doc => { if(op) doc.aprobada = op; else delete doc.aprobada; doc.total = tot; }, () => `Opción aprobada · Cotización ${c.numero}`); }catch(e){ console.warn(e); }
+      cerrar(); pintarHist(); $("h-status").className = "status ok"; $("h-status").textContent = op ? `✓ ${c.numero}: opción ${op} aprobada (${money(tot)}).` : `✓ ${c.numero}: se quitó la aprobación.`;
+    }catch(e){ st.className = "status bad"; st.textContent = "No se pudo guardar: " + e.message; caja.querySelectorAll("button").forEach(x => x.disabled = false); }
   });
 }
 $("h-export").onclick = () => { if(HVIEW==="fac") return exportarFac();
@@ -2185,7 +2372,7 @@ async function abrirDoc(x, codigo){
 document.addEventListener("paste", e => {   // pegar fotos con Ctrl+V en la fila activa de Facturación
   const enFac = !$("sec-fac").classList.contains("hidden"), enCot = !$("sec-form").classList.contains("hidden"); if(!enFac && !enCot) return;
   const fs = [...(e.clipboardData?.files || [])].filter(f => esImg(f) || esDoc(f)); if(!fs.length) return;
-  const filas = enFac ? [...$("fx-rows").children] : [...$("rows-mat").children, ...$("rows-mo").children];
+  const filas = enFac ? [...$("fx-rows").children] : [...$("rows-mat").children, ...$("rows-mo").children, ...$("rows-matB").children, ...$("rows-moB").children];
   const div = filas.includes(FILA_ACT) ? FILA_ACT : filas[filas.length-1]; if(!div) return;
   e.preventDefault(); agregarFotos(div, fs.map((f,i) => new File([f], f.name && f.name!=="image.png" ? f.name : `pegada_${Date.now()}_${i}.png`, {type:f.type})));
 });
@@ -2228,7 +2415,9 @@ async function subirFotos(codigo, st, filas = [...$("fx-rows").children]){   // 
     await ghPut(CFG.repoVal, `data/${k.id}-${f.id}.bin`, bin, null, `${que} · ${codigo.split("-")[0]}`); f.subido = true; }
 }
 /* cotización: filas de materiales 1, 2… y de mano de obra 101, 102… (así cada enlace del PDF abre su fila en el portal) */
-const filasCotAnex = c => [...(c.incMat ? c.materiales : []).map((it,i) => ({it, fila:i+1, etq:`Materiales · fila ${i+1}`})), ...(c.incMO ? c.manoObra : []).map((it,i) => ({it, fila:101+i, etq:`Mano de obra · fila ${i+1}`}))];
+const filasCotAnex = c => { const B = tieneOpc(c), sA = B ? " · opción A" : "";
+  return [...(c.incMat ? c.materiales : []).map((it,i) => ({it, fila:i+1, etq:`Materiales${opAct(c,"mat") ? sA : ""} · fila ${i+1}`})), ...(c.incMO ? c.manoObra : []).map((it,i) => ({it, fila:101+i, etq:`Mano de obra${opAct(c,"mo") ? sA : ""} · fila ${i+1}`})),
+    ...(opAct(c,"mat") ? c.alt.mat.items : []).map((it,i) => ({it, fila:201+i, etq:`Materiales · opción B · fila ${i+1}`})), ...(opAct(c,"mo") ? c.alt.mo.items : []).map((it,i) => ({it, fila:301+i, etq:`Mano de obra · opción B · fila ${i+1}`}))]; };
 function anexosCotPortal(c){
   const L = filasCotAnex(c), desc = it => String(it.desc||"").split("\n")[0].slice(0,120);
   const fotos = L.filter(x => x.it.fotos?.length).map(x => ({fila:x.fila, etq:x.etq, desc:desc(x.it), ids:x.it.fotos}));
@@ -3058,7 +3247,7 @@ function resolverPedido(txt){   // → {cs:[cotizaciones], faltan:[N.º], err}
 }
 function normCot(s){ const m = String(s||"").toUpperCase().replace(/\s+/g,"").match(/^([A-ZÑ])-?0*(\d{1,4})$/); return m ? `${m[1]}-${pad3(Number(m[2]))}` : null; }
 const OLDCOT = {};   // cotizaciones anteriores traídas del Excel o del portal (solo en esta sesión; no van al historial)
-function buscarCot(s){ const num = normCot(s); return num ? (HIST?.cotizaciones||[]).find(c => c.numero.toUpperCase()===num) || OLDCOT[num] || null : null; }
+function buscarCot(s){ const num = normCot(s); return num ? conOpcion((HIST?.cotizaciones||[]).find(c => c.numero.toUpperCase()===num) || OLDCOT[num] || null) : null; }
 function rowVacia(r){ return [...r.querySelectorAll("input,textarea")].every(el => el.value.trim()===""); }
 function filasMO(c){
   if(!c.incMO) return [];
@@ -4288,7 +4477,7 @@ async function incorporarPDF(file){
    Además, el formulario abierto se respalda solo en este equipo (cifrado) por si se cierra la pestaña. */
 CFG.histBorr = "historial/borradores.json";
 let BORR = null, BSHA = null; const BORR_ACT = {cot:null, fac:null};
-const BMOD = {cot:{sec:"sec-form", filas:["rows-mat","rows-mo"], st:"emit-status", nom:"cotización"}, fac:{sec:"sec-fac", filas:["fx-rows"], st:"fx-status", nom:"recibo / factura"}};
+const BMOD = {cot:{sec:"sec-form", filas:["rows-mat","rows-mo","rows-matB","rows-moB"], st:"emit-status", nom:"cotización"}, fac:{sec:"sec-fac", filas:["fx-rows"], st:"fx-status", nom:"recibo / factura"}};
 async function ghDel(repo, path, msg){ const sha = await ghShaOf(repo, path); if(!sha) return;
   const r = await gh(repo, `/contents/${path}`, {method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({message:msg, sha, branch:CFG.branch})}); if(!r.ok && r.status!==404) throw new Error("GitHub " + r.status); }
 async function cargarBorr(){
