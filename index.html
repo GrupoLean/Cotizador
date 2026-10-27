@@ -928,9 +928,9 @@ const PDFCOT = (() => {
       let lines = descLines(doc, it.desc, labor);
       if(anex.length && !String(it.desc||"").trim()) lines = [];   // sin descripción: solo los enlaces
       lines = lines.concat(anex);
-      const h = Math.max(17.6, lines.length*LH + 0.8);
+      const varias = lines.length > 1, h = varias ? lines.length*LH + 9 : Math.max(17.6, lines.length*LH + 0.8);   // varias líneas: un pequeño espacio después de la última
       if(y + h > BOT - minAfter){ footer(doc, A); doc.addPage(); y = header(doc, A, d, titulo); }
-      const top = y + Math.max(1.6, (h - lines.length*LH)/2 + 1.3);
+      const top = varias ? y + 3.4 : y + Math.max(1.6, (h - lines.length*LH)/2 + 1.3);
       lines.forEach((ln, k) => { if(!ln.t) return; const yy = top + k*LH; T(doc, ln.t, 112.8, yy, {st:ln.st, c: ln.link ? C.navy : C.black});
         if(ln.link){ const x = 112.8 + W(doc, ln.t, "bold", 8), w = W(doc, ln.link.t, "normal", 8);
           T(doc, ln.link.t, x, yy, {c:[30,79,184]}); doc.setDrawColor(30,79,184); doc.setLineWidth(0.4); doc.line(x, yy + 7.6, x + w, yy + 7.6);
@@ -1606,8 +1606,9 @@ function fechas(){
   $("f-fecha").value = fechaLarga(f); $("f-vence").value = fechaLarga(masDias(f,30));
   return f;
 }
+let COT_SUF = null;
 function nueva(){
-  EDIT = null;
+  EDIT = null; COT_SUF = null;
   $("form-title").firstChild.textContent = "Nueva cotización "; $("form-badge").textContent = "";
   ["f-cliente","f-ruc","f-email"].forEach(id => $(id).value=""); $("f-dur").value = "3 - 5 horas";
   $("inc-mat").checked = true; $("inc-mo").checked = true;
@@ -1624,7 +1625,7 @@ function ponerOpB(c, modo){   // llena (o limpia) las hojas de la opción B
   $("f-durB").value = c?.alt?.mo?.duracion || "3 - 5 horas"; calc();
 }
 function cargar(c, modo){   // modo: "editar" | "duplicar"
-  EDIT = modo==="editar" ? c : null;
+  EDIT = modo==="editar" ? c : null; COT_SUF = null;
   $("f-cliente").value = c.cliente; $("f-ruc").value = c.ruc||""; $("f-email").value = c.email||""; $("f-dur").value = c.duracion||"3 - 5 horas";
   $("inc-mat").checked = c.incMat; $("inc-mo").checked = c.incMO;
   $("rows-mat").innerHTML=""; $("rows-mo").innerHTML="";
@@ -1660,7 +1661,8 @@ function armar(){   // valida y arma el registro
   const gasto = gastoLeer("f-g"), reporte = repLeer();
   const fecha = fechas(), tot = totales(mat, mo, incMat, incMO);
   const numero = numeroDe(L, n);
-  const codigo = EDIT ? EDIT.codigo : (numero.replace(/-/g,"") + "-" + [...crypto.getRandomValues(new Uint8Array(8))].map(b=>ALF[b%ALF.length]).join("").replace(/^(.{4})/,"$1-"));
+  if(!COT_SUF) COT_SUF = [...crypto.getRandomValues(new Uint8Array(8))].map(b=>ALF[b%ALF.length]).join("").replace(/^(.{4})/,"$1-");   // el mismo código mientras se arma esta cotización
+  const codigo = EDIT ? EDIT.codigo : (numero.replace(/-/g,"") + "-" + COT_SUF);
   return { ...guardaEstado(EDIT, ["cxc","cxcAnulada","origen"]), ...(gasto ? {gasto} : {}), ...(reporte ? {reporte} : {}), numero, letra:L.toUpperCase(), n, codigo, cliente, ruc:$("f-ruc").value.trim(), email:normEmails($("f-email").value), fecha, validoHasta:masDias(fecha,30),
            incMat, incMO, materiales: incMat?mat:[], manoObra: incMO?mo:[], duracion:$("f-dur").value.trim(),
            tot:{matSub:tot.matSub, matItbms:tot.matItbms, matTotal:tot.matTotal, moSub:tot.moSub}, total: tot.general,
@@ -2358,6 +2360,12 @@ async function agregarFotos(div, files){
     div._docs.push({id:idFoto(), nombre: f.name || ("documento." + e), tipo: DOC_TIPOS[e] || f.type || "application/octet-stream", tam:f.size, blob:f});
   }
   st.textContent = aviso; pintarFotos(div); (div._cambio || fCalc)();
+  if(div === REPDIV) prepararReporte();
+}
+function prepararReporte(){   // mientras sigues llenando: carga las librerías y revisa las esquinas del reporte (la vista previa sale más rápido)
+  const pdfs = (REPDIV?._docs||[]).filter(x => x.blob && esPDFdoc(x)); if(!pdfs.length) return;
+  setTimeout(async () => { try{ if(!window.PDFLib) await cargarScript(PDFLIB_URL); await libsPDF();
+    for(const x of pdfs) await esquinasLibres(new Uint8Array(await x.blob.arrayBuffer())); }catch(e){ console.warn(e); } }, 300);
 }
 const DOCCACHE = {};
 async function docPortal(codigo, x){   // trae y descifra un documento ya publicado
@@ -2754,6 +2762,7 @@ const repLeer = () => !$("f-rep-no").checked && REPDIV?._docs?.length ? anexosDe
 const esPDFdoc = x => /pdf/i.test(x.tipo) || /\.pdf$/i.test(x.nombre||"");
 const tieneRep = c => !!c?.reporte?.docs?.some(esPDFdoc);
 const PDFLIB_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
+const REPQR = new Map();
 async function bytesCot(c){   // PDF de la cotización; con reporte: reporte (con QR) + materiales + mano de obra
   const base = pdfBytes(pdfDe(c)); if(!tieneRep(c)) return base;
   if(!window.PDFLib) await cargarScript(PDFLIB_URL);
@@ -2762,7 +2771,9 @@ async function bytesCot(c){   // PDF de la cotización; con reporte: reporte (co
     const loc = REPDIV?._docs?.find(y => y.id===x.id && y.blob), sub = REPDIV?._docs?.find(y => y.id===x.id);
     if(!loc && sub && !sub.subido && !sub.src) throw new Error(`vuelve a adjuntar el reporte «${x.nombre}» (quítalo con × y agrégalo de nuevo)`);
     const bytes = new Uint8Array(await (loc ? loc.blob : await docPortal(c.codigo, x).catch(() => { throw new Error(`no encuentro el reporte «${x.nombre}»: quítalo con × y vuelve a adjuntarlo`); })).arrayBuffer());
-    await agregarConQR(out, bytes, url);
+    const kq = claveBytes(bytes) + "|" + url;   // el reporte con su QR ya armado se reutiliza (otra vista previa, emitir, compartir)
+    if(!REPQR.has(kq)){ const tmp = await PDFDocument.create(); await agregarConQR(tmp, bytes, url); REPQR.set(kq, await tmp.save()); }
+    const listo = await PDFDocument.load(REPQR.get(kq)); (await out.copyPages(listo, listo.getPageIndices())).forEach(pg => out.addPage(pg));
   }
   const cot = await PDFDocument.load(base);
   (await out.copyPages(cot, cot.getPageIndices())).forEach(pg => out.addPage(pg));
@@ -2803,10 +2814,13 @@ function sellarQR(pg, texto, esq, rgb){
   pg.drawRectangle({x:x0, y:y0, width:QR_PT, height:QR_PT, color:rgb(1,1,1)});
   for(let r=0;r<n;r++) for(let k=0;k<n;k++) if(q.isDark(r,k)) pg.drawRectangle({x:x0 + (k+1)*cell, y:y0 + QR_PT - (r+2)*cell, width:cell+0.02, height:cell+0.02, color:rgb(26/255, 53/255, 84/255)});
 }
-async function esquinasLibres(bytes){   // para cada página: la primera esquina en blanco (arriba-der, arriba-izq, abajo-der, abajo-izq)
+const ESQ_CACHE = new Map();   // esquinas libres por archivo (se calcula una sola vez)
+const claveBytes = b => b.length + ":" + [0, 1, 2, 3, 4, 5, 6, 7].map(i => b[Math.floor(i * (b.length - 1) / 7)]).join(".");
+function esquinasLibres(bytes){ const k = claveBytes(bytes); if(!ESQ_CACHE.has(k)) ESQ_CACHE.set(k, esquinasLibres_(bytes).catch(e => { ESQ_CACHE.delete(k); throw e; })); return ESQ_CACHE.get(k); }
+async function esquinasLibres_(bytes){   // para cada página: la primera esquina en blanco (arriba-der, arriba-izq, abajo-der, abajo-izq)
   await libsPDF(); const doc = await pdfjsLib.getDocument({data: bytes.slice()}).promise, res = [];
   for(let p=1; p<=doc.numPages; p++){
-    const pg = await doc.getPage(p), v0 = pg.getViewport({scale:1}), esc = Math.min(1, 400 / v0.width), v = pg.getViewport({scale:esc});
+    const pg = await doc.getPage(p), v0 = pg.getViewport({scale:1}), esc = Math.min(1, 220 / v0.width), v = pg.getViewport({scale:esc});   // basta una imagen pequeña para ver si la esquina está en blanco
     const cv = document.createElement("canvas"); cv.width = Math.ceil(v.width); cv.height = Math.ceil(v.height); const ctx = cv.getContext("2d", {willReadFrequently:true});
     ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); await pg.render({canvasContext:ctx, viewport:v}).promise;
     const t = Math.ceil((QR_PT + 6) * esc), m = Math.floor((QR_M - 3) * esc);
