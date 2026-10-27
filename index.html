@@ -2194,7 +2194,7 @@ function pintarHist(){
     <td><button class="num-link${c.anulado?" anul":""}" data-a="ver" data-c="${esc(c.codigo)}" title="Ver la cotización (PDF)">${esc(c.numero)}</button></td>
     <td>${esc(fechaLarga(c.fecha))}</td>
     <td>${esc(c.cliente)}${c.ruc?`<div class="hint">${esc(c.ruc)}</div>`:""}</td>
-    <td class="r"><b>${money(c.total)}</b>${tieneOpc(c) ? `<div class="hint">${c.aprobada ? `Opción ${c.aprobada} aprobada` : `A ${money(c.totA ?? c.total)} · B ${money(c.opB.total)}`}</div>` : ""}</td>
+    <td class="r">${tieneOpc(c) && !c.aprobada ? `<b title="Opción A – Opción B">${money(c.totA ?? c.total)} – ${money(c.opB.total)}</b>` : `<b>${money(c.total)}</b>`}${tieneOpc(c) && c.aprobada ? `<div class="hint">Opción ${c.aprobada} aprobada</div>` : ""}</td>
     <td>${(e => `<span class="pill ${e.cls}">${e.t}</span>`)(estadoCot(c))}${c.anulado ? `<div class="hint">${esc(PDFFAC.dmy(c.anulado.fecha))}${c.anulado.motivo ? " · " + esc(c.anulado.motivo) : ""}</div>` : ""}${c.publicado===false ? ' <span class="pill p-bad" title="Este código aún no está en el portal">No publicada</span>' : ''}${c.origen==="excel" ? '<div class="hint">De Excel</div>' : ''}${c.cxc && !c.anulado ? '<div style="margin-top:3px"><span class="pill p-blue" style="padding:1px 8px;font-size:11px" title="Está en Cuentas por cobrar">En cobro</span></div>' : ''}</td>
     <td class="acts-td"><div class="acts">
       <button class="b-navy b-sm" data-a="pdf" data-c="${esc(c.codigo)}" title="Descargar PDF">Descargar</button>
