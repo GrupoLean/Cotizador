@@ -2830,7 +2830,17 @@ async function esquinasLibres_(bytes){   // para cada página: la primera esquin
   }
   return res;
 }
-async function verCot(c){ if(!tieneRep(c)) return abrirPDF(pdfDe(c)); const w = ventanaPrevia(); try{ abrirBytes(await bytesCot(c), w); }catch(e){ if(w) w.close(); throw e; } }
+async function verCot(c, st){   // con reporte: en PC se arma aquí mismo (una pestaña en segundo plano trabaja muy lento) y luego se abre
+  if(!tieneRep(c)) return abrirPDF(pdfDe(c));
+  if(!esPC()){ const w = ventanaPrevia(); try{ abrirBytes(await bytesCot(c), w); }catch(e){ if(w) w.close(); throw e; } return; }
+  st = st || ($("sec-form").classList.contains("hidden") ? $("h-status") : $("emit-status"));
+  st.className = "status"; st.textContent = "Armando el PDF con el reporte…";
+  const bytes = await bytesCot(c), url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"}));
+  const w = window.open(url, "_blank");
+  if(w){ st.textContent = ""; return; }
+  st.className = "status ok"; st.innerHTML = `✓ PDF listo. <button class="b-navy b-sm" id="prev-abrir">📄 Abrir vista previa</button>`;   // el navegador bloqueó la ventana: un toque más
+  $("prev-abrir").onclick = () => { window.open(url, "_blank"); st.textContent = ""; };
+}
 const docsPortal = d => d.items.map((it,i) => it.docs?.length ? {fila:i+1, desc:String(it.desc||"").split("\n")[0].slice(0,120), archivos:it.docs.map(({id,nombre,tipo,tam}) => ({id,nombre,tipo,tam}))} : null).filter(Boolean);
 const enlaceDocs = (d, i) => (d.items[i]?.docs||[]).length ? `${fUrl(d)}&f=${i+1}&d=1` : "";
 const fotosPortal = d => d.items.map((it,i) => it.fotos?.length ? {fila:i+1, desc:String(it.desc||"").split("\n")[0].slice(0,120), ids:it.fotos} : null).filter(Boolean);
