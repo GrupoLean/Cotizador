@@ -3476,7 +3476,7 @@ async function datosPortal(codigo){
 }
 function abrirBytes(bytes, w){ const url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"})); if(w && !w.closed){ w.location.href = url; return; } const w2 = window.open(url, "_blank"); if(!w2) location.href = url; }
 function ventanaPrevia(){   // se abre en el mismo toque; luego se le pone el PDF (Safari/iPhone bloquea ventanas abiertas tarde)
-  try{ const w = window.open("", "_blank"); if(w){ w.document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><p style="font:16px -apple-system,sans-serif;padding:24px;color:#1A3554">Abriendo PDF…</p>'); } return w; }catch(e){ return null; }
+  try{ const w = window.open("", "_blank"); if(w){ w.document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><p style="font:16px -apple-system,sans-serif;padding:24px;color:#1A3554">Armando el PDF…<br><small style="color:#5B6878">Si lleva reporte anexado puede tardar unos segundos.</small></p>'); } return w; }catch(e){ return null; }
 }
 function bajarBytes(bytes, nombre){ const url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"})); const a = document.createElement("a"); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); }
 
