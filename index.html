@@ -2219,10 +2219,10 @@ function pintarHist(){
       catch(e){ st.className = "status bad"; st.textContent = "No se pudo armar el PDF: " + e.message; return; }
     }
     if((b.dataset.a==="ver" || b.dataset.a==="pdf") && c.origen==="excel" && c.publicado){   // el PDF original publicado desde Excel
-      const st = $("h-status"); st.className="status"; st.textContent="Abriendo el PDF original del portal…";
-      const w = b.dataset.a==="ver" ? ventanaPrevia() : null;
-      try{ const bytes = await pdfPortal(c.codigo); st.textContent=""; b.dataset.a==="ver" ? abrirBytes(bytes, w) : bajarBytes(bytes, nombrePDF(c)); }
-      catch(e){ if(w) w.close(); st.className="status bad"; st.textContent = "No se pudo abrir el PDF del portal: " + e.message; }
+      const st = $("h-status");
+      try{ if(b.dataset.a==="ver") await abrirListo(() => pdfPortal(c.codigo), st, "Trayendo el PDF original del portal…");
+           else { st.className="status"; st.textContent="Trayendo el PDF original del portal…"; bajarBytes(await pdfPortal(c.codigo), nombrePDF(c)); st.textContent=""; } }
+      catch(e){ st.className="status bad"; st.textContent = "No se pudo abrir el PDF del portal: " + e.message; }
       return;
     }
     if(b.dataset.a==="ver") verCot(c).catch(e => { $("h-status").className = "status bad"; $("h-status").textContent = "No se pudo armar el PDF: " + e.message; });
@@ -2540,11 +2540,12 @@ function pintarInf(){
 async function accionInf(a, x){
   if(!x) return; const st = $("h-status");
   if(a==="ver" || a==="pdf" || a==="share"){
-    const w = a==="ver" ? ventanaPrevia() : null; st.className = "status"; st.textContent = "Trayendo el informe del portal…";
+    if(a==="ver") return abrirListo(() => pdfPortal(x.codigo), st, "Trayendo el informe del portal…").catch(e => { st.className = "status bad"; st.textContent = "No se pudo traer el informe: " + e.message; });
+    st.className = "status"; st.textContent = "Trayendo el informe del portal…";
     try{ const bytes = await pdfPortal(x.codigo); st.textContent = "";
-      if(a==="ver") abrirBytes(bytes, w); else if(a==="pdf") bajarBytes(bytes, nombreInf(x));
+      if(a==="pdf") bajarBytes(bytes, nombreInf(x));
       else compartirPara(paraDe(x), bytes, nombreInf(x), `Informe técnico ${x.numero} · Grupo Σ LEAN`, st, mensajeWA("Informe técnico", x, urlDe(x))); }
-    catch(e){ if(w) w.close(); st.className = "status bad"; st.textContent = "No se pudo traer el informe: " + e.message; }
+    catch(e){ st.className = "status bad"; st.textContent = "No se pudo traer el informe: " + e.message; }
     return;
   }
   if(a==="edit"){
@@ -2708,8 +2709,8 @@ $("rp-ec").onclick = async () => {
       <div class="ec-emi-r"><div><b>${esc(x.numero)}</b> · ${esc(x.cliente)}<small>${PDFFAC.dmy(x.fecha)} · ${esc(x.periodo||"Todos")} · saldo ${money(x.saldo||0)}</small></div>
       <div class="ec-emi-b"><button class="b-ghost b-sm" data-ecv="${i}" title="Abrir el PDF">📄</button><button class="b-ghost b-sm b-share" data-ecs="${i}">📤 Compartir</button></div></div>`).join("")}</div><div class="status" id="ec-emi-st"></div></details>`;
     const pdfDe = async x => { const st = $("ec-emi-st"); st.className = "status"; st.textContent = `Descargando ${x.numero} del portal…`; const b = await pdfPortal(x.codigo); st.textContent = ""; return b; };
-    box.querySelectorAll("[data-ecv]").forEach(b => b.onclick = async () => { const x = L[b.dataset.ecv], w = window.open("", "_blank");
-      try{ abrirBytes(await pdfDe(x), w); }catch(e){ if(w) w.close(); $("ec-emi-st").className = "status bad"; $("ec-emi-st").textContent = "No se pudo: " + e.message; } });
+    box.querySelectorAll("[data-ecv]").forEach(b => b.onclick = async () => { const x = L[b.dataset.ecv];
+      try{ await abrirListo(() => pdfPortal(x.codigo), $("ec-emi-st"), `Descargando ${x.numero} del portal…`); }catch(e){ $("ec-emi-st").className = "status bad"; $("ec-emi-st").textContent = "No se pudo: " + e.message; } });
     box.querySelectorAll("[data-ecs]").forEach(b => b.onclick = async () => { const x = L[b.dataset.ecs], st = $("ec-emi-st");
       try{ const pdf = await pdfDe(x), url = CFG.site + "?c=" + x.codigo;
         compartirPara(paraDe({cliente:x.cliente}), pdf, nombreEC({numero:x.numero, cliente:x.cliente, corte:x.fecha}) + ".pdf", `Estado de cuenta ${x.numero} · Grupo Σ LEAN`, st, mensajeWA("Estado de cuenta", {numero:x.numero, cliente:x.cliente}, url)); }
@@ -2830,16 +2831,9 @@ async function esquinasLibres_(bytes){   // para cada página: la primera esquin
   }
   return res;
 }
-async function verCot(c, st){   // con reporte: se arma aquí mismo y luego se abre (una pestaña en segundo plano trabaja muy lento en PC y en el celular se detiene)
+async function verCot(c, st){   // sin reporte se arma al instante; con reporte se prepara antes de abrir
   if(!tieneRep(c)) return abrirPDF(pdfDe(c));
-  st = st || ($("sec-form").classList.contains("hidden") ? $("h-status") : $("emit-status"));
-  st.className = "status"; st.textContent = "Armando el PDF con el reporte…";
-  const bytes = await bytesCot(c), url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"}));
-  const w = window.open(url, "_blank");
-  if(w){ st.textContent = ""; return; }
-  st.className = "status ok"; st.innerHTML = `✓ PDF listo. <button class="b-navy b-sm" id="prev-abrir">📄 Abrir vista previa</button>`;   // el navegador bloqueó la ventana (en el celular, casi siempre): un toque más
-  setTimeout(() => $("prev-abrir")?.scrollIntoView({behavior:"smooth", block:"center"}), 50);
-  $("prev-abrir").onclick = () => { const w2 = window.open(url, "_blank"); if(!w2) location.href = url; st.textContent = ""; };
+  return abrirListo(() => bytesCot(c), st || ($("sec-form").classList.contains("hidden") ? $("h-status") : $("emit-status")), "Armando el PDF con el reporte…");
 }
 const docsPortal = d => d.items.map((it,i) => it.docs?.length ? {fila:i+1, desc:String(it.desc||"").split("\n")[0].slice(0,120), archivos:it.docs.map(({id,nombre,tipo,tam}) => ({id,nombre,tipo,tam}))} : null).filter(Boolean);
 const enlaceDocs = (d, i) => (d.items[i]?.docs||[]).length ? `${fUrl(d)}&f=${i+1}&d=1` : "";
@@ -3084,7 +3078,6 @@ function bajarXML(d){
 
 /* ----- historial de recibos y facturas ----- */
 let FSORT_DESC = true, HVIEW = "cot";
-function fVencido(d){ return !d.anulado && (d.cobro?.estado||"Pendiente")!=="Cobrado" && new Date(d.vence+"T23:59:59-05:00") < new Date(); }
 function pintarFac(){
   const q = $("h-q").value.trim().toLowerCase(), tb = $("hf-body");
   const L = (FHIST?.docs||[]).filter(d => !q || [d.numero, d.tipo, d.cliente, d.ruc, d.items.map(i=>i.desc).join(" ")].join(" ").toLowerCase().includes(q))
@@ -3111,11 +3104,13 @@ function pintarFac(){
   tb.querySelectorAll("button[data-f]").forEach(b => b.onclick = () => {
     const d = FHIST.docs.find(x => x.codigo===b.dataset.c); if(!d) return;
     if(["ver","pdf","share"].includes(b.dataset.f) && d.origen==="excel" && d.publicado){   // PDF original incorporado / publicado desde Excel
-      const st = $("h-status"), w = b.dataset.f==="ver" ? ventanaPrevia() : null; st.className="status"; st.textContent="Preparando el PDF original…";
+      const st = $("h-status");
+      if(b.dataset.f==="ver") return abrirListo(() => pdfPortal(d.codigo), st, "Trayendo el PDF original…").catch(e => { st.className="status bad"; st.textContent = "No se pudo obtener el PDF del portal: " + e.message; });
+      st.className="status"; st.textContent="Preparando el PDF original…";
       return pdfPortal(d.codigo).then(bytes => { st.textContent="";
-        if(b.dataset.f==="ver") abrirBytes(bytes, w); else if(b.dataset.f==="pdf") bajarBytes(bytes, fNombre(d));
+        if(b.dataset.f==="pdf") bajarBytes(bytes, fNombre(d));
         else compartirPara(paraDe(d), bytes, fNombre(d), `${d.tipo} ${d.numero} · Grupo Σ LEAN`, st, mensajeWA(d.tipo, d, fUrl(d))); })
-        .catch(e => { if(w) w.close(); st.className="status bad"; st.textContent = "No se pudo obtener el PDF del portal: " + e.message; });
+        .catch(e => { st.className="status bad"; st.textContent = "No se pudo obtener el PDF del portal: " + e.message; });
     }
     if(b.dataset.f==="ver") abrirPDF(fPdf(d));
     if(b.dataset.f==="pdf") bajarPDF(fPdf(d), fNombre(d));
@@ -3417,12 +3412,6 @@ function quitarPruebas(lista, cont){
   cont.ultimoExcel = Math.max(Number(cont.ultimoExcel||0), ...fuera.map(x => Number(x.n)||0));
   fuera.forEach(x => lista.splice(lista.indexOf(x), 1)); return fuera.length;
 }
-async function purgarPruebas(){
-  let n = 0;
-  for(let i=0;i<3;i++){ try{ await recargarHist(); const k = quitarPruebas(HIST.cotizaciones, HIST); if(k){ await guardarHist(`Borrar ${k} cotización(es) de prueba`); } n += k; break; }catch(e){ if(e.status!==409 || i===2) throw e; } }
-  for(let i=0;i<3;i++){ try{ await cargarFac(); const k = quitarPruebas(FHIST.docs, FHIST); if(k){ await guardarFac(`Borrar ${k} documento(s) de prueba`); } n += k; break; }catch(e){ if(e.status!==409 || i===2) throw e; } }
-  return n;
-}
 function pedirAnular(kind, rec, anular){
   const box = $("h-imp"), fem = kind==="cot" || rec.tipo==="Factura";
   const nom = kind==="cot" ? `la cotización ${rec.numero}` : `${rec.tipo==="Factura"?"la factura":"el recibo"} ${rec.numero}`;
@@ -3498,10 +3487,22 @@ async function datosPortal(codigo){
     return JSON.parse(td.decode(await descifrar(k.key, unb64(j.iv), unb64(j.ct))));
   }catch(e){ return null; }
 }
-function abrirBytes(bytes, w){ const url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"})); if(w && !w.closed){ w.location.href = url; return; } const w2 = window.open(url, "_blank"); if(!w2) location.href = url; }
-function ventanaPrevia(){   // se abre en el mismo toque; luego se le pone el PDF (Safari/iPhone bloquea ventanas abiertas tarde)
-  try{ const w = window.open("", "_blank"); if(w){ w.document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><p style="font:16px -apple-system,sans-serif;padding:24px;color:#1A3554">Armando el PDF…<br><small style="color:#5B6878">Si lleva reporte anexado puede tardar unos segundos.</small></p>'); } return w; }catch(e){ return null; }
+/* Abrir un PDF que tarda en prepararse (con reporte, o traído del portal).
+   Se prepara AQUÍ, en la pestaña del Cotizador, y recién al final se abre: así el iPhone no pausa la página a medias
+   (pasaba al abrir antes una pestaña en blanco) y Chrome no la hace trabajar lento en segundo plano.
+   Si el navegador ya no deja abrir la ventana sola (en el iPhone es lo normal), aparece «Abrir vista previa»: un toque y listo. */
+async function abrirListo(trabajo, st, aviso){
+  st = st || $("h-status"); const prev = [st.className, st.innerHTML];
+  st.className = "status"; st.textContent = aviso || "Preparando el PDF…";
+  const bytes = await (typeof trabajo === "function" ? trabajo() : trabajo);
+  const url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"}));
+  let w = null; try{ w = window.open(url, "_blank"); }catch(e){}
+  if(w){ st.className = prev[0]; st.innerHTML = prev[1].includes("prev-abrir") ? "" : prev[1]; if(st.textContent===(aviso || "Preparando el PDF…")) st.textContent = ""; return; }
+  st.className = "status ok"; st.innerHTML = `✓ PDF listo. <button class="b-navy b-sm" id="prev-abrir">📄 Abrir vista previa</button>`;
+  setTimeout(() => $("prev-abrir")?.scrollIntoView({behavior:"smooth", block:"center"}), 50);
+  $("prev-abrir").onclick = () => { const w2 = window.open(url, "_blank"); if(!w2) location.href = url; st.textContent = ""; };
 }
+
 function bajarBytes(bytes, nombre){ const url = URL.createObjectURL(new Blob([bytes], {type:"application/pdf"})); const a = document.createElement("a"); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); }
 
 /* ----- importar desde Excel ----- */
@@ -3928,9 +3929,9 @@ function pedirDeshacer(d){
 async function verCx(d){
   try{
     if(d._k==="cot"){ const c = HIST.cotizaciones.find(x => x.codigo===d.codigo); if(!c) return;
-      if(c.origen==="excel" && c.publicado){ const w = ventanaPrevia(); abrirBytes(await pdfPortal(c.codigo), w); } else await verCot(c); }
+      if(c.origen==="excel" && c.publicado) await abrirListo(() => pdfPortal(c.codigo), $("cx-status"), "Trayendo el PDF original…"); else await verCot(c, $("cx-status")); }
     else { const x = FHIST.docs.find(y => y.codigo===d.codigo); if(!x) return;
-      if(x.origen==="excel" && x.publicado){ const w = ventanaPrevia(); abrirBytes(await pdfPortal(x.codigo), w); } else abrirPDF(fPdf(x)); }
+      if(x.origen==="excel" && x.publicado) await abrirListo(() => pdfPortal(x.codigo), $("cx-status"), "Trayendo el PDF original…"); else abrirPDF(fPdf(x)); }
   }catch(e){ $("cx-status").className = "status bad"; $("cx-status").textContent = "No se pudo abrir el documento: " + e.message; }
 }
 function pedirQuitarCx(d){
@@ -3958,7 +3959,6 @@ async function restaurarCx(d){
     $("cx-status").className = "status ok"; $("cx-status").textContent = `✓ ${d.numero} volvió a cuentas por cobrar.`; pintarCxc();
   }catch(e){ $("cx-status").className = "status bad"; $("cx-status").textContent = "No se pudo: " + e.message; }
 }
-function cotDeDoc(d){ return d.cotRef || (d.pedido && d.pedido!==d.numero ? codsCot(d.pedido)[0] || null : null); }
 function cotsDeDoc(d){ if(d.cotRefs?.length) return d.cotRefs; const p = d.pedido && d.pedido!==d.numero ? codsCot(d.pedido) : []; return p.length ? p : d.cotRef ? [d.cotRef] : []; }
 function choqueCxc(kind, rec){   // evita cobrar dos veces lo mismo (cotización y su recibo)
   if(kind==="fac"){
