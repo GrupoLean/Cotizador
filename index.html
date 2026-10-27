@@ -2759,8 +2759,9 @@ async function bytesCot(c){   // PDF de la cotización; con reporte: reporte (co
   if(!window.PDFLib) await cargarScript(PDFLIB_URL);
   const {PDFDocument, rgb} = window.PDFLib, out = await PDFDocument.create(), url = urlDe(c);
   for(const x of c.reporte.docs.filter(esPDFdoc)){
-    const loc = REPDIV?._docs?.find(y => y.id===x.id && y.blob);
-    const bytes = new Uint8Array(await (loc ? loc.blob : await docPortal(c.codigo, x)).arrayBuffer());
+    const loc = REPDIV?._docs?.find(y => y.id===x.id && y.blob), sub = REPDIV?._docs?.find(y => y.id===x.id);
+    if(!loc && sub && !sub.subido && !sub.src) throw new Error(`vuelve a adjuntar el reporte «${x.nombre}» (quítalo con × y agrégalo de nuevo)`);
+    const bytes = new Uint8Array(await (loc ? loc.blob : await docPortal(c.codigo, x).catch(() => { throw new Error(`no encuentro el reporte «${x.nombre}»: quítalo con × y vuelve a adjuntarlo`); })).arrayBuffer());
     await agregarConQR(out, bytes, url);
   }
   const cot = await PDFDocument.load(base);
@@ -2769,9 +2770,24 @@ async function bytesCot(c){   // PDF de la cotización; con reporte: reporte (co
   return new Uint8Array(await out.save());
 }
 async function agregarConQR(out, bytes, url){   // agrega las páginas de un PDF con el QR en la primera esquina libre de cada una
-  const src = await window.PDFLib.PDFDocument.load(bytes, {ignoreEncryption:true});
   const esquinas = await esquinasLibres(bytes).catch(() => []);
-  (await out.copyPages(src, src.getPageIndices())).forEach((pg, i) => { out.addPage(pg); sellarQR(pg, url, esquinas[i] || "tr", window.PDFLib.rgb); });
+  let pags = null;
+  try{
+    const src = await window.PDFLib.PDFDocument.load(bytes, {ignoreEncryption:true, updateMetadata:false});
+    if(src.isEncrypted) throw new Error("PDF protegido");
+    pags = await out.copyPages(src, src.getPageIndices());
+  }catch(e){ console.warn("El reporte no se pudo copiar tal cual; se agrega como imagen:", e); pags = null; }
+  if(pags){ pags.forEach((pg, i) => { out.addPage(pg); sellarQR(pg, url, esquinas[i] || "tr", window.PDFLib.rgb); }); return; }
+  // plan B (PDF protegido, dañado o con un formato que no se puede copiar): cada página se dibuja como imagen nítida
+  await libsPDF(); const doc = await pdfjsLib.getDocument({data: bytes.slice()}).promise;
+  for(let p=1; p<=doc.numPages; p++){
+    const pg = await doc.getPage(p), v0 = pg.getViewport({scale:1}), esc = Math.min(2.5, 1800 / Math.max(v0.width, v0.height)), v = pg.getViewport({scale:esc});
+    const cv = document.createElement("canvas"); cv.width = Math.ceil(v.width); cv.height = Math.ceil(v.height); const ctx = cv.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); await pg.render({canvasContext:ctx, viewport:v}).promise;
+    const jpg = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.9)), img = await out.embedJpg(new Uint8Array(await jpg.arrayBuffer()));
+    const np = out.addPage([v0.width, v0.height]); np.drawImage(img, {x:0, y:0, width:v0.width, height:v0.height});
+    sellarQR(np, url, esquinas[p-1] || "tr", window.PDFLib.rgb); cv.width = cv.height = 0;
+  }
 }
 async function pdfConQR(bytes, url, titulo){
   if(!window.PDFLib) await cargarScript(PDFLIB_URL);
@@ -4537,8 +4553,9 @@ async function aplicarEstado(mod, e, archivos){   // vuelve a armar el formulari
       else if(el.value!==v){ el.value = v; if(!soloSinEvento && id!=="fx-pedido") el.dispatchEvent(new Event("input", {bubbles:true})); } });
     Object.entries(e.radios||{}).forEach(([n, v]) => { const el = document.querySelector(`input[type=radio][name="${CSS.escape(n)}"][value="${CSS.escape(v)}"]`); if(el && !el.checked){ el.checked = true; if(!soloSinEvento) el.dispatchEvent(new Event("change", {bubbles:true})); } });
   };
-  const ponerArch = (r, m, codigo) => { r._fotos = (m.fotos||[]).map(f => ({...f, ...(archivos[f.id] ? {blob:archivos[f.id], url:URL.createObjectURL(archivos[f.id])} : {})}));
-    r._docs = (m.docs||[]).map(x => ({...x, ...(archivos[x.id] ? {blob:archivos[x.id]} : {})})); pintarFotos(r, codigo); };
+  const hay = f => archivos[f.id] || f.subido || f.src;   // un archivo nuevo sin su contenido (respaldo local) no se puede usar: hay que volver a agregarlo
+  const ponerArch = (r, m, codigo) => { r._fotos = (m.fotos||[]).filter(hay).map(f => ({...f, ...(archivos[f.id] ? {blob:archivos[f.id], url:URL.createObjectURL(archivos[f.id])} : {})}));
+    r._docs = (m.docs||[]).filter(hay).map(x => ({...x, ...(archivos[x.id] ? {blob:archivos[x.id]} : {})})); pintarFotos(r, codigo); };
   if(mod==="cot"){
     const c = e.edit ? (HIST.cotizaciones||[]).find(x => x.codigo===e.edit) : null; if(c) cargar(c, "editar"); else nueva();
     setCampos(false);
@@ -4631,7 +4648,7 @@ async function respaldoOfrecer(){
     const st = $(BMOD[mod].st);
     if(Date.now() - new Date(r.t).getTime() < 24*3600e3){   // la página se recargó (p. ej. el celular la cerró): se recupera sola
       await aplicarEstado(mod, r.estado, {}); BORR_ACT[mod] = r.borr || null; LIMPIO[mod] = false; pintarBorr(); if(mod==="cot") show("nueva");
-      st.className = "status ok"; st.innerHTML = `↩︎ Recuperé ${mod==="cot" ? "la cotización" : "el recibo / factura"} que estabas haciendo${r.cliente ? ` (<b>${esc(r.cliente)}</b>)` : ""}.${blobsFaltan(r.estado) ? " Vuelve a agregar las fotos o anexos nuevos." : ""} <button class="b-ghost b-sm" id="rs-${mod}-no">Descartar</button>`;
+      st.className = "status ok"; st.innerHTML = `↩︎ Recuperé ${mod==="cot" ? "la cotización" : "el recibo / factura"} que estabas haciendo${r.cliente ? ` (<b>${esc(r.cliente)}</b>)` : ""}.${blobsFaltan(r.estado) ? " Vuelve a agregar las fotos, anexos o el reporte que habías puesto." : ""} <button class="b-ghost b-sm" id="rs-${mod}-no">Descartar</button>`;
       $(`rs-${mod}-no`).onclick = () => { respaldoBorrar(mod); BORR_ACT[mod] = null; mod==="cot" ? nueva() : fNueva(); LIMPIO[mod] = true; st.textContent = ""; pintarBorr(); };
       continue;
     }
@@ -4641,7 +4658,7 @@ async function respaldoOfrecer(){
     $(`rs-${mod}-no`).onclick = () => { respaldoBorrar(mod); st.textContent = ""; };
   }
 }
-const blobsFaltan = e => Object.values(e.filas||{}).some(L => L.some(r => r.fotos.some(f => !f.subido && !f.src) || r.docs.some(x => !x.subido && !x.src)));
+const blobsFaltan = e => Object.values(e.filas||{}).some(L => L.some(r => r.fotos.some(f => !f.subido && !f.src) || r.docs.some(x => !x.subido && !x.src))) || !!e.rep?.docs?.some(x => !x.subido && !x.src);
 $("btn-borr").onclick = () => guardarBorrador("cot");
 $("fx-borr").onclick = () => guardarBorrador("fac");
 $("btn-limpiar").addEventListener("click", () => { BORR_ACT.cot = null; respaldoBorrar("cot"); pintarBorr(); });
